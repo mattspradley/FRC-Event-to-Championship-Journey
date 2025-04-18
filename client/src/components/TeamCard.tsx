@@ -81,7 +81,7 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails }) => {
               <span className="font-medium ml-1">{team.division || (status === "waitlist" ? "TBD" : "N/A")}</span>
             </div>
             
-            {/* Championship performance - only show if qualified */}
+            {/* Championship division performance - only show if qualified and has division */}
             {team.isQualified && team.division && (
               <>
                 <div>
@@ -94,6 +94,24 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails }) => {
                   <span className="text-muted-foreground">Division Record:</span>
                   <span className="font-medium ml-1">{team.championshipRecord || "TBD"}</span>
                 </div>
+              </>
+            )}
+            
+            {/* Final championship performance - only show if qualified and has final data */}
+            {team.isQualified && team.finalEventKey && (
+              <>
+                <div>
+                  <span className="text-muted-foreground">Championship Status:</span>
+                  <span className="font-medium ml-1">
+                    {team.finalRank || "Competing"}
+                  </span>
+                </div>
+                {team.finalRecord && (
+                  <div>
+                    <span className="text-muted-foreground">Finals Record:</span>
+                    <span className="font-medium ml-1">{team.finalRecord}</span>
+                  </div>
+                )}
               </>
             )}
           </div>

@@ -74,6 +74,11 @@ export async function getEventTeams(eventKey: string) {
   return fetchFromApi(`/event/${eventKey}/teams`);
 }
 
+// Get team statuses for an event
+export async function getEventTeamStatuses(eventKey: string) {
+  return fetchFromApi(`/event/${eventKey}/teams/statuses`);
+}
+
 // Get event rankings
 export async function getEventRankings(eventKey: string) {
   return fetchFromApi(`/event/${eventKey}/rankings`);
@@ -215,6 +220,33 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
       log(`Error fetching rankings for event ${eventKey}: ${error}`, "blueAlliance");
     }
     
+    // Create maps to quickly lookup division and championship statuses
+    const divisionStatusesMap: Record<string, Record<string, any>> = {};
+    const championshipStatusesMap: Record<string, Record<string, any>> = {};
+    
+    // Fetch all division and championship team statuses upfront
+    for (const divEvent of divisionEvents) {
+      try {
+        log(`Fetching team statuses for division ${divEvent.key}`, "blueAlliance");
+        const divStatuses = await getEventTeamStatuses(divEvent.key);
+        divisionStatusesMap[divEvent.key] = divStatuses || {};
+      } catch (error) {
+        log(`Error fetching team statuses for division ${divEvent.key}: ${error}`, "blueAlliance");
+        divisionStatusesMap[divEvent.key] = {};
+      }
+    }
+    
+    for (const champEvent of championshipEvents) {
+      try {
+        log(`Fetching team statuses for championship ${champEvent.key}`, "blueAlliance");
+        const champStatuses = await getEventTeamStatuses(champEvent.key);
+        championshipStatusesMap[champEvent.key] = champStatuses || {};
+      } catch (error) {
+        log(`Error fetching team statuses for championship ${champEvent.key}: ${error}`, "blueAlliance");
+        championshipStatusesMap[champEvent.key] = {};
+      }
+    }
+    
     // Process each team
     const teamPromises = teams.map(async (team: any) => {
       const teamKey = team.key;
@@ -232,44 +264,66 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
       let divisionTotalTeams = 0;
       let championshipAwards: any[] = [];
       
-      // For each championship, check if the team is participating
+      // Final championship event data
+      let finalEventKey = '';
+      let finalRank = null;
+      let finalRecord = null;
+      
+      // Check if team is in any championship
       for (const champEvent of championshipEvents) {
-        championshipEventKey = champEvent.key; 
+        championshipEventKey = champEvent.key;
+        const teamChampStatusMap = championshipStatusesMap[championshipEventKey] || {};
         
-        // Use the direct team status API endpoint for this championship
-        const teamChampStatus = await getTeamEventStatus(teamKey, championshipEventKey);
-        
-        if (teamChampStatus) {
+        // Check if this team has a status for this championship
+        if (teamChampStatusMap[teamKey]) {
           log(`Found team ${teamKey} status for championship ${championshipEventKey}`, "blueAlliance");
           
           // If the team has a status, they're qualified
           isQualified = true;
           championshipLocation = champEvent.city || champEvent.name;
           
-          // Process status information
-          if (teamChampStatus.alliance) {
-            log(`Team ${teamKey} is in an alliance at ${championshipEventKey}`, "blueAlliance");
+          // Get championship status details
+          const teamStatus = teamChampStatusMap[teamKey];
+          
+          // If team has alliance data, they're in the finals
+          if (teamStatus.alliance) {
+            finalEventKey = championshipEventKey;
+            
+            if (teamStatus.playoff && teamStatus.playoff.status) {
+              finalRank = teamStatus.playoff.status;
+            }
+            
+            if (teamStatus.playoff && teamStatus.playoff.record) {
+              const record = teamStatus.playoff.record;
+              finalRecord = `${record.wins}-${record.losses}-${record.ties}`;
+            }
           }
           
-          // Check which division this team is in
+          // Check team's division
+          if (teamStatus.alliance_status_str) {
+            log(`Team ${teamKey} alliance status: ${teamStatus.alliance_status_str}`, "blueAlliance");
+          }
+          
+          // Find which division this team is in
           for (const divEvent of divisionEvents) {
-            // Only check divisions for this championship (they share year prefix)
+            // Only check divisions for this championship
             const divYearPrefix = divEvent.key.substring(0, 4);
             const champYearPrefix = champEvent.key.substring(0, 4);
             
             if (divYearPrefix === champYearPrefix) {
-              // Check this division for the team
-              const teamDivStatus = await getTeamEventStatus(teamKey, divEvent.key);
+              const divStatuses = divisionStatusesMap[divEvent.key] || {};
               
-              if (teamDivStatus) {
+              // Check if team is in this division
+              if (divStatuses[teamKey]) {
                 divisionEventKey = divEvent.key;
                 division = getDivisionName(divEvent.key, divEvent.name);
                 
                 log(`Team ${teamKey} is in division ${division} (${divisionEventKey})`, "blueAlliance");
                 
                 // Get ranking info from the division
-                if (teamDivStatus.qual && teamDivStatus.qual.ranking) {
-                  const ranking = teamDivStatus.qual.ranking;
+                const divStatus = divStatuses[teamKey];
+                if (divStatus.qual && divStatus.qual.ranking) {
+                  const ranking = divStatus.qual.ranking;
                   championshipRank = ranking.rank;
                   
                   if (ranking.record) {
@@ -283,67 +337,57 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
                   log(`Team ${teamKey} is ranked ${championshipRank} with record ${championshipRecord} in division ${division}`, "blueAlliance");
                 }
                 
-                // We found the right division, no need to check others
+                // We found the division for this team, no need to check others
                 break;
               }
             }
           }
           
-          // We found a championship this team is in, no need to check others
+          // We found championship info for this team, no need to check others
           break;
-        } else {
-          // If status check failed, let's fallback to checking team lists
-          // This is less accurate but provides a backup method
-          try {
-            // Check if the team is in this championship's team list
-            const champTeams = await getEventTeams(championshipEventKey);
-            if (champTeams.find((t: any) => t.key === teamKey)) {
-              isQualified = true;
-              championshipLocation = champEvent.city || champEvent.name;
-              log(`Team ${teamKey} found in team list for ${championshipEventKey}`, "blueAlliance");
-              
-              // Check divisions for this championship
-              for (const divEvent of divisionEvents) {
-                // Only check divisions for this championship (they share year prefix)
-                const divYearPrefix = divEvent.key.substring(0, 4);
-                const champYearPrefix = champEvent.key.substring(0, 4);
+        }
+      }
+      
+      // If we didn't find division info through statuses, fallback to checking team lists
+      if (isQualified && !division) {
+        log(`No division status found for qualified team ${teamKey}, checking team lists`, "blueAlliance");
+        
+        // Get championship year prefix
+        const champYearPrefix = championshipEventKey.substring(0, 4);
+        
+        // Check each division for this championship
+        for (const divEvent of divisionEvents) {
+          const divYearPrefix = divEvent.key.substring(0, 4);
+          
+          if (divYearPrefix === champYearPrefix) {
+            try {
+              // Check if team is in this division
+              const divTeams = await getEventTeams(divEvent.key);
+              if (divTeams.find((t: any) => t.key === teamKey)) {
+                divisionEventKey = divEvent.key;
+                division = getDivisionName(divEvent.key, divEvent.name);
+                log(`Team ${teamKey} found in team list for division ${division}`, "blueAlliance");
                 
-                if (divYearPrefix === champYearPrefix) {
-                  try {
-                    const divTeams = await getEventTeams(divEvent.key);
-                    if (divTeams.find((t: any) => t.key === teamKey)) {
-                      divisionEventKey = divEvent.key;
-                      division = getDivisionName(divEvent.key, divEvent.name);
-                      log(`Team ${teamKey} found in team list for division ${division} (${divisionEventKey})`, "blueAlliance");
-                      
-                      // Get rankings for this division if available
-                      try {
-                        const divRankings = await getEventRankings(divEvent.key);
-                        if (divRankings && divRankings.rankings) {
-                          divisionTotalTeams = divRankings.rankings.length;
-                          const teamRank = divRankings.rankings.find((r: any) => r.team_key === teamKey);
-                          if (teamRank) {
-                            championshipRank = teamRank.rank;
-                            championshipRecord = `${teamRank.record.wins}-${teamRank.record.losses}-${teamRank.record.ties}`;
-                          }
-                        }
-                      } catch (error) {
-                        log(`Error fetching rankings for division ${divEvent.key}: ${error}`, "blueAlliance");
-                      }
-                      
-                      break;
+                // Try to get ranking info
+                try {
+                  const divRankings = await getEventRankings(divEvent.key);
+                  if (divRankings && divRankings.rankings) {
+                    divisionTotalTeams = divRankings.rankings.length;
+                    const teamRank = divRankings.rankings.find((r: any) => r.team_key === teamKey);
+                    if (teamRank) {
+                      championshipRank = teamRank.rank;
+                      championshipRecord = `${teamRank.record.wins}-${teamRank.record.losses}-${teamRank.record.ties}`;
                     }
-                  } catch (error) {
-                    log(`Error checking division ${divEvent.key} for team ${teamKey}: ${error}`, "blueAlliance");
                   }
+                } catch (error) {
+                  log(`Error fetching rankings for division ${divEvent.key}: ${error}`, "blueAlliance");
                 }
+                
+                break;
               }
-              
-              // We found the championship, no need to check others
-              break;
+            } catch (error) {
+              log(`Error checking division ${divEvent.key} for team ${teamKey}: ${error}`, "blueAlliance");
             }
-          } catch (error) {
-            log(`Error checking championship ${championshipEventKey} for team ${teamKey}: ${error}`, "blueAlliance");
           }
         }
       }
@@ -375,6 +419,11 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
         championshipRecord,
         championshipAwards: championshipAwards,
         divisionTotalTeams,
+        // Add final event data
+        finalEventKey,
+        finalRank,
+        finalRecord,
+        // Current event data
         rank: rankInfo.rank,
         record: rankInfo.record,
         totalTeams: rankInfo.totalTeams

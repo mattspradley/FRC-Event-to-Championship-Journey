@@ -54,6 +54,11 @@ export interface TeamWithStatus {
   championshipRecord?: string;
   championshipAwards?: ChampionshipAward[];
   divisionTotalTeams?: number;
+  // Final championship event data
+  finalEventKey?: string;
+  finalRank?: string;
+  finalRecord?: string;
+  // Current event data
   rank?: number;
   record?: string;
   totalTeams?: number;

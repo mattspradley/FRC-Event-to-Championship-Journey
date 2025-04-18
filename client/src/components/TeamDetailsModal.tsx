@@ -65,26 +65,73 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
               </span>
             </div>
             
-            {team.isQualified && team.division && (
+            {team.isQualified && (
               <div className="bg-green-50 border border-green-200 rounded-md p-3 mt-2">
-                <h5 className="text-sm font-medium text-green-800 mb-2">Championship Division Performance</h5>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-green-800">Division Rank:</span>
-                    <span className="font-medium ml-1 text-green-900">
-                      {team.championshipRank ? `${team.championshipRank} of ${team.divisionTotalTeams || "N/A"}` : "Not Yet Available"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-green-800">Division Record:</span>
-                    <span className="font-medium ml-1 text-green-900">
-                      {team.championshipRecord || "Not Yet Available"}
-                    </span>
-                  </div>
-                </div>
+                {/* Show division information if available */}
+                {team.division && (
+                  <>
+                    <h5 className="text-sm font-medium text-green-800 mb-2">Championship Division Performance</h5>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-green-800">Division:</span>
+                        <span className="font-medium ml-1 text-green-900">
+                          {team.division || "Not Yet Assigned"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-green-800">Event Key:</span>
+                        <span className="font-medium ml-1 text-green-900">
+                          {team.divisionEventKey || "N/A"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-green-800">Division Rank:</span>
+                        <span className="font-medium ml-1 text-green-900">
+                          {team.championshipRank ? `${team.championshipRank} of ${team.divisionTotalTeams || "N/A"}` : "Not Yet Available"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-green-800">Division Record:</span>
+                        <span className="font-medium ml-1 text-green-900">
+                          {team.championshipRecord || "Not Yet Available"}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
                 
+                {/* Show finals information if available */}
+                {team.finalEventKey && (
+                  <>
+                    <h5 className="text-sm font-medium text-green-800 mb-2 mt-3">Championship Finals Performance</h5>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-green-800">Finals Status:</span>
+                        <span className="font-medium ml-1 text-green-900">
+                          {team.finalRank || "Competing"}
+                        </span>
+                      </div>
+                      {team.finalRecord && (
+                        <div>
+                          <span className="text-green-800">Finals Record:</span>
+                          <span className="font-medium ml-1 text-green-900">
+                            {team.finalRecord}
+                          </span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-green-800">Championship Key:</span>
+                        <span className="font-medium ml-1 text-green-900">
+                          {team.finalEventKey}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
+                
+                {/* Show championship awards if available */}
                 {team.championshipAwards && team.championshipAwards.length > 0 && (
-                  <div className="mt-2">
+                  <div className="mt-3">
                     <h6 className="text-sm font-medium text-green-800 mb-1">Championship Awards</h6>
                     <ul className="list-disc list-inside text-sm text-green-900">
                       {team.championshipAwards.map((award, index) => (
