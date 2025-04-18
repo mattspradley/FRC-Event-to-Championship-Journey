@@ -13,12 +13,30 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails }) => {
   const statusColor = getStatusColor(status);
   const statusText = getStatusText(status, team.waitlistPosition);
   
+  // Define better colors based on status
+  const statusColorClasses: Record<string, string> = {
+    success: "border-green-500 bg-green-50",
+    warning: "border-yellow-500 bg-yellow-50",
+    destructive: "border-red-500 bg-red-50",
+    muted: "border-gray-300"
+  };
+  
+  const badgeClasses: Record<string, string> = {
+    success: "bg-green-100 text-green-800 hover:bg-green-200",
+    warning: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
+    destructive: "bg-red-100 text-red-800 hover:bg-red-200",
+    muted: ""
+  };
+  
   return (
-    <div className={`bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-${statusColor}`}>
+    <div className={`bg-white rounded-lg shadow-md overflow-hidden border-t-4 ${statusColorClasses[statusColor]}`}>
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-mono text-xl font-medium">Team {team.team.team_number}</h3>
-          <Badge variant={statusColor === "muted" ? "secondary" : statusColor as any}>
+          <Badge 
+            variant={statusColor === "muted" ? "secondary" : statusColor as any}
+            className={badgeClasses[statusColor]}
+          >
             {statusText}
           </Badge>
         </div>

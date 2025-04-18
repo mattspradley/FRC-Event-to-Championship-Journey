@@ -48,7 +48,14 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
           <div className="mb-4">
             <h4 className="text-sm font-medium text-muted-foreground mb-1">Championship Status</h4>
             <div className="flex items-center mb-2">
-              <Badge variant={statusColor === "muted" ? "secondary" : statusColor as any} className="mr-2">
+              <Badge 
+                variant={statusColor === "muted" ? "secondary" : statusColor as any} 
+                className={`mr-2 ${
+                  statusColor === "success" ? "bg-green-100 text-green-800" : 
+                  statusColor === "warning" ? "bg-yellow-100 text-yellow-800" :
+                  statusColor === "destructive" ? "bg-red-100 text-red-800" : ""
+                }`}
+              >
                 {statusText}
               </Badge>
               <span className="text-sm">
