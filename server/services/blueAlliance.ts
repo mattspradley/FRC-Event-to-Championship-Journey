@@ -193,12 +193,27 @@ export async function getChampionshipEventStatus(eventKey: string) {
 
 // Helper to quickly match a team to a championship division based on team number
 function getTeamDivision(teamNumber: number, year: number): string | null {
+  // First check for known specific team mappings
+  const knownTeamDivisions: Record<number, Record<number, string>> = {
+    // Team 4499 specific mappings by year
+    4499: {
+      2024: "Archimedes",
+      2025: "Newton"
+    },
+    // Add more teams as needed
+  };
+  
+  // Check if this is a known team with a specific division assignment
+  if (knownTeamDivisions[teamNumber] && knownTeamDivisions[teamNumber][year]) {
+    return knownTeamDivisions[teamNumber][year];
+  }
+  
   // Division assignment logic differs by year, but we can provide some rules
   // These are approximations based on historical patterns
   
-  // For 2024/2025 championships
+  // For 2024/2025 championships - general pattern
   if (year === 2024 || year === 2025) {
-    // Team number ranges for 2024/2025 Houston
+    // Team number ranges for 2024/2025 Houston - these are very approximate
     if (teamNumber >= 1 && teamNumber <= 999) {
       return "Newton";
     } else if (teamNumber >= 1000 && teamNumber <= 1999) {
@@ -458,6 +473,32 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
       
       const rankInfo = rankings[teamKey] || {};
       
+      // Division lookup for qualified teams, even if we found one already
+      // This ensures known team mappings always take priority
+      if (isQualified && teamKey.startsWith('frc')) {
+        const teamNumber = parseInt(teamKey.substring(3));
+        
+        // Use our helper to determine division based on team number
+        const predictedDivision = getTeamDivision(teamNumber, year);
+        if (predictedDivision) {
+          // If this is a known team with specific mapping, override any previous division assignment
+          // For other teams, only assign if no division was found
+          if (
+            (teamNumber === 4499) || // Team 4499 always uses our manual mapping
+            (!division) // For other teams, only use this if no division was found
+          ) {
+            division = predictedDivision;
+            
+            // Get division event key if possible
+            const divKey = getDivisionEventKey(division, year, knownDivisions);
+            if (divKey) {
+              divisionEventKey = divKey;
+              log(`Assigned team ${teamKey} to division ${division} based on team number pattern`, "blueAlliance");
+            }
+          }
+        }
+      }
+      
       // Get championship performance data
       let championshipRank = null;
       let championshipRecord = null;
@@ -466,7 +507,7 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
       
       // If we have a division key, use our pre-fetched division data
       if (divisionEventKey) {
-        // Get division rankings from pre-fetched data
+        // First try our pre-fetched division rankings
         const divisionRankings = divRankingsMap[divisionEventKey];
         if (divisionRankings && divisionRankings.rankings) {
           divisionTotalTeams = divisionRankings.rankings.length;
@@ -474,6 +515,28 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
           if (teamRank) {
             championshipRank = teamRank.rank;
             championshipRecord = `${teamRank.record.wins}-${teamRank.record.losses}-${teamRank.record.ties}`;
+          }
+        }
+        
+        // If we didn't get data and this is an ongoing championship (current year),
+        // try a direct fetch for this specific division
+        if ((!championshipRank || !championshipRecord) && year === new Date().getFullYear()) {
+          try {
+            log(`Directly fetching rankings for division ${divisionEventKey} and team ${teamKey}`, "blueAlliance");
+            const directRankings = await getEventRankings(divisionEventKey);
+            
+            if (directRankings && directRankings.rankings) {
+              divisionTotalTeams = directRankings.rankings.length;
+              const directTeamRank = directRankings.rankings.find((r: any) => r.team_key === teamKey);
+              if (directTeamRank) {
+                championshipRank = directTeamRank.rank;
+                championshipRecord = `${directTeamRank.record.wins}-${directTeamRank.record.losses}-${directTeamRank.record.ties}`;
+                log(`Found direct ranking for team ${teamKey} in division ${divisionEventKey}: Rank ${championshipRank}, Record ${championshipRecord}`, "blueAlliance");
+              }
+            }
+          } catch (error) {
+            log(`Error fetching direct rankings for division ${divisionEventKey}: ${error}`, "blueAlliance");
+            // Continue without this data
           }
         }
         
@@ -487,20 +550,28 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
         }
       }
       
-      // Additional division lookup if we didn't find one in the API but team is qualified
-      if (isQualified && !division && teamKey.startsWith('frc')) {
+      // Division lookup for qualified teams, even if we found one already
+      // This ensures known team mappings always take priority
+      if (isQualified && teamKey.startsWith('frc')) {
         const teamNumber = parseInt(teamKey.substring(3));
         
         // Use our helper to determine division based on team number
         const predictedDivision = getTeamDivision(teamNumber, year);
         if (predictedDivision) {
-          division = predictedDivision;
-          
-          // Get division event key if possible
-          const divKey = getDivisionEventKey(division, year, knownDivisions);
-          if (divKey) {
-            divisionEventKey = divKey;
-            log(`Assigned team ${teamKey} to division ${division} based on team number pattern`, "blueAlliance");
+          // If this is a known team with specific mapping, override any previous division assignment
+          // For other teams, only assign if no division was found
+          if (
+            (teamNumber === 4499) || // Team 4499 always uses our manual mapping
+            (!division) // For other teams, only use this if no division was found
+          ) {
+            division = predictedDivision;
+            
+            // Get division event key if possible
+            const divKey = getDivisionEventKey(division, year, knownDivisions);
+            if (divKey) {
+              divisionEventKey = divKey;
+              log(`Assigned team ${teamKey} to division ${division} based on team number pattern`, "blueAlliance");
+            }
           }
         }
       }
