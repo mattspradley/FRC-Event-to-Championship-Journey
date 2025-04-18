@@ -204,7 +204,16 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
     const championshipEvents = allEvents.filter((event: any) => event.event_type === 4);
     const divisionEvents = allEvents.filter((event: any) => event.event_type === 3);
     
+    // Add detailed logging of the events
     log(`Found ${championshipEvents.length} championship events and ${divisionEvents.length} division events for ${year}`, "blueAlliance");
+    
+    if (championshipEvents.length > 0) {
+      log(`Championship events: ${championshipEvents.map((e: any) => `${e.key} (${e.name})`).join(', ')}`, "blueAlliance");
+    }
+    
+    if (divisionEvents.length > 0) {
+      log(`Division events: ${divisionEvents.map((e: any) => `${e.key} (${e.name})`).join(', ')}`, "blueAlliance");
+    }
     
     // Get the teams at our current event
     const teams = await getEventTeams(eventKey);
@@ -234,9 +243,19 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
     // Fetch all division and championship team statuses upfront
     for (const divEvent of divisionEvents) {
       try {
-        log(`Fetching team statuses for division ${divEvent.key}`, "blueAlliance");
+        log(`Fetching team statuses for division ${divEvent.key} (${divEvent.name})`, "blueAlliance");
         const divStatuses = await getEventTeamStatuses(divEvent.key);
         divisionStatusesMap[divEvent.key] = divStatuses || {};
+        
+        // Log how many teams we found in this division
+        const teamCount = Object.keys(divStatuses || {}).length;
+        log(`Found ${teamCount} teams in division ${divEvent.name} (${divEvent.key})`, "blueAlliance");
+        
+        // If we have teams in this division, log the first few
+        if (teamCount > 0) {
+          const teamSample = Object.keys(divStatuses).slice(0, 3);
+          log(`Sample teams in ${divEvent.name}: ${teamSample.join(', ')}`, "blueAlliance");
+        }
       } catch (error) {
         log(`Error fetching team statuses for division ${divEvent.key}: ${error}`, "blueAlliance");
         divisionStatusesMap[divEvent.key] = {};
@@ -245,9 +264,19 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
     
     for (const champEvent of championshipEvents) {
       try {
-        log(`Fetching team statuses for championship ${champEvent.key}`, "blueAlliance");
+        log(`Fetching team statuses for championship ${champEvent.key} (${champEvent.name})`, "blueAlliance");
         const champStatuses = await getEventTeamStatuses(champEvent.key);
         championshipStatusesMap[champEvent.key] = champStatuses || {};
+        
+        // Log how many teams we found in this championship
+        const teamCount = Object.keys(champStatuses || {}).length;
+        log(`Found ${teamCount} teams in championship ${champEvent.name} (${champEvent.key})`, "blueAlliance");
+        
+        // If we have teams in this championship, log the first few
+        if (teamCount > 0) {
+          const teamSample = Object.keys(champStatuses).slice(0, 3);
+          log(`Sample teams in ${champEvent.name} championship: ${teamSample.join(', ')}`, "blueAlliance");
+        }
       } catch (error) {
         log(`Error fetching team statuses for championship ${champEvent.key}: ${error}`, "blueAlliance");
         championshipStatusesMap[champEvent.key] = {};
