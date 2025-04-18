@@ -134,7 +134,7 @@ export async function getEventRankings(eventKey: string) {
 export async function getChampionshipEvents(year: number) {
   const events = await getEvents(year);
   return events.filter((event: any) => 
-    event.event_type === 3 || event.event_type === 4 // Championship & Championship Division
+    event.event_type === 3 || event.event_type === 4 || event.event_type === 5 // Championship, Championship Division & Festival of Champions
   );
 }
 
@@ -142,6 +142,53 @@ export async function getChampionshipEvents(year: number) {
 export async function getChampionshipDivisions(year: number) {
   const championships = await getChampionshipEvents(year);
   return championships.filter((event: any) => event.event_type === 4);
+}
+
+// Get event results/status for a specific championship event
+export async function getChampionshipEventStatus(eventKey: string) {
+  try {
+    // Get event details to determine if the event is finished
+    const event = await getEvent(eventKey);
+    const now = new Date();
+    const endDate = event.end_date ? new Date(event.end_date) : null;
+    const isFinished = endDate ? now > endDate : false;
+    
+    // Get rankings
+    let rankings = [];
+    try {
+      const rankData = await getEventRankings(eventKey);
+      if (rankData && rankData.rankings) {
+        rankings = rankData.rankings;
+      }
+    } catch (error) {
+      log(`Error fetching championship rankings for ${eventKey}: ${error}`, "blueAlliance");
+    }
+    
+    // Get awards if event is finished
+    let awards = [];
+    if (isFinished) {
+      try {
+        awards = await fetchFromApi(`/event/${eventKey}/awards`);
+      } catch (error) {
+        log(`Error fetching awards for ${eventKey}: ${error}`, "blueAlliance");
+      }
+    }
+    
+    return {
+      isFinished,
+      rankings,
+      awards,
+      event
+    };
+  } catch (error) {
+    log(`Error getting championship status for ${eventKey}: ${error}`, "blueAlliance");
+    return {
+      isFinished: false,
+      rankings: [],
+      awards: [],
+      event: null
+    };
+  }
 }
 
 // Determine championship qualification status for teams at an event
@@ -205,13 +252,15 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
     }
     
     // For each team, check which championship they're in (now using pre-fetched data)
-    const teamStatuses = teams.map((team: any) => {
+    const teamPromises = teams.map(async (team: any) => {
       const teamKey = team.key;
       
       // Check all championship events to see if this team is registered
       let isQualified = false;
       let championshipLocation = '';
       let division = '';
+      let championshipEventKey = '';
+      let divisionEventKey = '';
       
       // Check each championship event for this team using pre-fetched data
       for (const champEvent of championshipEvents) {
@@ -222,22 +271,66 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
           isQualified = true;
           championshipLocation = champEvent.city || champEvent.name;
           
-          // If this is a top-level championship, check divisions
-          if (champEvent.event_type === 3) {
+          // Determine event type and store event key
+          if (champEvent.event_type === 3) { // Main championship
+            championshipEventKey = champEvent.key;
+            
+            // Check divisions for this team
             for (const div of divisions) {
               const divTeams = divTeamsMap[div.key] || [];
               if (divTeams.find((t: any) => t.key === teamKey)) {
                 division = div.name;
+                divisionEventKey = div.key;
                 break;
               }
             }
+          } else if (champEvent.event_type === 4) { // Division event
+            divisionEventKey = champEvent.key;
+            division = champEvent.name;
           }
           
-          break;
+          if (championshipEventKey || divisionEventKey) {
+            break;
+          }
         }
       }
       
       const rankInfo = rankings[teamKey] || {};
+      
+      // Get championship performance data
+      let championshipRank = null;
+      let championshipRecord = null;
+      let championshipAwards = [];
+      let divisionTotalTeams = 0;
+      
+      // If we have a division key, get the team's performance in that division
+      if (divisionEventKey) {
+        try {
+          // Get division rankings
+          const divisionRankings = await getEventRankings(divisionEventKey);
+          if (divisionRankings && divisionRankings.rankings) {
+            divisionTotalTeams = divisionRankings.rankings.length;
+            const teamRank = divisionRankings.rankings.find((r: any) => r.team_key === teamKey);
+            if (teamRank) {
+              championshipRank = teamRank.rank;
+              championshipRecord = `${teamRank.record.wins}-${teamRank.record.losses}-${teamRank.record.ties}`;
+            }
+          }
+          
+          // Get awards for this team at this event
+          try {
+            const divisionAwards = await fetchFromApi(`/team/${teamKey}/event/${divisionEventKey}/awards`);
+            if (divisionAwards && divisionAwards.length > 0) {
+              championshipAwards = divisionAwards;
+            }
+          } catch (error) {
+            // Awards might not be available, that's OK
+            log(`No awards found for team ${teamKey} at event ${divisionEventKey}`, "blueAlliance");
+          }
+        } catch (error) {
+          log(`Error fetching championship division data for team ${teamKey}: ${error}`, "blueAlliance");
+        }
+      }
       
       return {
         team,
@@ -245,11 +338,20 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
         waitlistPosition: isQualified ? undefined : (Math.random() > 0.7 ? Math.floor(Math.random() * 10) + 1 : 0), // Mock waitlist for demo
         championshipLocation,
         division,
+        divisionEventKey,
+        championshipEventKey,
+        championshipRank,
+        championshipRecord,
+        championshipAwards,
+        divisionTotalTeams,
         rank: rankInfo.rank,
         record: rankInfo.record,
         totalTeams: rankInfo.totalTeams
       };
     });
+    
+    // Wait for all team promises to resolve
+    const teamStatuses = await Promise.all(teamPromises);
     
     log(`Processed ${teamStatuses.length} team statuses for event ${eventKey}`, "blueAlliance");
     return teamStatuses;

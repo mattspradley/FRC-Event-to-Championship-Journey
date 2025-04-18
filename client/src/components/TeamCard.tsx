@@ -29,16 +29,19 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails }) => {
         
         <div className="border-t border-neutral-100 mt-3 pt-3">
           <div className="grid grid-cols-2 gap-2 text-sm">
+            {/* Local event rankings */}
             <div>
-              <span className="text-muted-foreground">Ranking:</span>
+              <span className="text-muted-foreground">Event Rank:</span>
               <span className="font-medium ml-1">
                 {team.rank ? `${team.rank} of ${team.totalTeams}` : "N/A"}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground">W-L-T:</span>
+              <span className="text-muted-foreground">Event Record:</span>
               <span className="font-medium ml-1">{team.record || "N/A"}</span>
             </div>
+            
+            {/* Championship info */}
             <div>
               <span className="text-muted-foreground">Championship:</span>
               <span className="font-medium ml-1">
@@ -49,6 +52,22 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails }) => {
               <span className="text-muted-foreground">Division:</span>
               <span className="font-medium ml-1">{team.division || (status === "waitlist" ? "TBD" : "N/A")}</span>
             </div>
+            
+            {/* Championship performance - only show if qualified */}
+            {team.isQualified && team.division && (
+              <>
+                <div>
+                  <span className="text-muted-foreground">Division Rank:</span>
+                  <span className="font-medium ml-1">
+                    {team.championshipRank ? `${team.championshipRank} of ${team.divisionTotalTeams || 'N/A'}` : "TBD"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Division Record:</span>
+                  <span className="font-medium ml-1">{team.championshipRecord || "TBD"}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

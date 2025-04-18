@@ -27,7 +27,7 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg" description={`Team ${team.team.team_number} championship status and performance details`}>
         <DialogHeader>
           <DialogTitle>
             Team {team.team.team_number}: {team.team.nickname || team.team.name}
@@ -43,7 +43,7 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
           
           <div className="mb-4">
             <h4 className="text-sm font-medium text-muted-foreground mb-1">Championship Status</h4>
-            <div className="flex items-center">
+            <div className="flex items-center mb-2">
               <Badge variant={statusColor === "muted" ? "secondary" : statusColor as any} className="mr-2">
                 {statusText}
               </Badge>
@@ -53,10 +53,41 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
                   : (status === "waitlist" ? "Pending Waitlist" : "Not Qualified")}
               </span>
             </div>
+            
+            {team.isQualified && team.division && (
+              <div className="bg-green-50 border border-green-200 rounded-md p-3 mt-2">
+                <h5 className="text-sm font-medium text-green-800 mb-2">Championship Division Performance</h5>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-green-800">Division Rank:</span>
+                    <span className="font-medium ml-1 text-green-900">
+                      {team.championshipRank ? `${team.championshipRank} of ${team.divisionTotalTeams || "N/A"}` : "Not Yet Available"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-green-800">Division Record:</span>
+                    <span className="font-medium ml-1 text-green-900">
+                      {team.championshipRecord || "Not Yet Available"}
+                    </span>
+                  </div>
+                </div>
+                
+                {team.championshipAwards && team.championshipAwards.length > 0 && (
+                  <div className="mt-2">
+                    <h6 className="text-sm font-medium text-green-800 mb-1">Championship Awards</h6>
+                    <ul className="list-disc list-inside text-sm text-green-900">
+                      {team.championshipAwards.map((award, index) => (
+                        <li key={index}>{award.name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
           <div className="mb-4">
-            <h4 className="text-sm font-medium text-muted-foreground mb-1">Performance at Event</h4>
+            <h4 className="text-sm font-medium text-muted-foreground mb-1">Performance at Current Event</h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <span className="text-muted-foreground">Ranking:</span>
@@ -86,7 +117,7 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
           </div>
           
           <div>
-            <h4 className="text-sm font-medium text-muted-foreground mb-1">Awards at Event</h4>
+            <h4 className="text-sm font-medium text-muted-foreground mb-1">Awards at Current Event</h4>
             <ul className="text-sm list-disc list-inside">
               {(team.team.data && (team.team.data as any).awards && (team.team.data as any).awards.length > 0) ?
                 (team.team.data as any).awards.map((award: string, index: number) => (

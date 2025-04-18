@@ -23,6 +23,23 @@ export interface Team {
   state_prov?: string;
   country?: string;
   rookie_year?: number;
+  data?: {
+    opr?: number;
+    dpr?: number;
+    awards?: string[];
+    [key: string]: any;
+  };
+}
+
+export interface ChampionshipAward {
+  name: string;
+  award_type: number;
+  event_key: string;
+  recipient_list: {
+    team_key?: string;
+    awardee?: string;
+  }[];
+  year: number;
 }
 
 export interface TeamWithStatus {
@@ -31,6 +48,12 @@ export interface TeamWithStatus {
   waitlistPosition?: number;
   championshipLocation?: string;
   division?: string;
+  divisionEventKey?: string;
+  championshipEventKey?: string;
+  championshipRank?: number;
+  championshipRecord?: string;
+  championshipAwards?: ChampionshipAward[];
+  divisionTotalTeams?: number;
   rank?: number;
   record?: string;
   totalTeams?: number;
