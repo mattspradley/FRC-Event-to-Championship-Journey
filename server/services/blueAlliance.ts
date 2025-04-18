@@ -191,65 +191,34 @@ export async function getChampionshipEventStatus(eventKey: string) {
   }
 }
 
-// Helper to quickly match a team to a championship division based on team number
-function getTeamDivision(teamNumber: number, year: number): string | null {
-  // First check for known specific team mappings
-  const knownTeamDivisions: Record<number, Record<number, string>> = {
-    // Team 4499 specific mappings by year
-    4499: {
-      2024: "Archimedes",
-      2025: "Newton"
-    },
-    // Add more teams as needed
+// Helper function to get the proper division name from an event
+function getDivisionName(eventKey: string, year: number, eventName: string): string {
+  // First, try to extract the division code from the event key
+  // Event keys typically follow the format YYYY + division code
+  // e.g., "2025arc" for Archimedes division
+  const divisionCode = eventKey.substring(4);
+  
+  // Common division name mappings
+  const divisionNames: Record<string, string> = {
+    'arc': 'Archimedes',
+    'car': 'Carson',
+    'cur': 'Curie',
+    'dal': 'Daly',
+    'gal': 'Galileo',
+    'hop': 'Hopper',
+    'joh': 'Johnson',
+    'mil': 'Milstein',
+    'new': 'Newton',
+    'tur': 'Turing'
   };
   
-  // Check if this is a known team with a specific division assignment
-  if (knownTeamDivisions[teamNumber] && knownTeamDivisions[teamNumber][year]) {
-    return knownTeamDivisions[teamNumber][year];
+  // If we have a known name for this code, use it
+  if (divisionNames[divisionCode]) {
+    return divisionNames[divisionCode];
   }
   
-  // Division assignment logic differs by year, but we can provide some rules
-  // These are approximations based on historical patterns
-  
-  // For 2024/2025 championships - general pattern
-  if (year === 2024 || year === 2025) {
-    // Team number ranges for 2024/2025 Houston - these are very approximate
-    if (teamNumber >= 1 && teamNumber <= 999) {
-      return "Newton";
-    } else if (teamNumber >= 1000 && teamNumber <= 1999) {
-      return "Galileo";
-    } else if (teamNumber >= 2000 && teamNumber <= 2999) {
-      return "Hopper";
-    } else if (teamNumber >= 3000 && teamNumber <= 3999) {
-      return "Archimedes";
-    } else if (teamNumber >= 4000 && teamNumber <= 4999) {
-      return "Curie";
-    } else if (teamNumber >= 5000 && teamNumber <= 5999) {
-      return "Daly";
-    } else if (teamNumber >= 6000 && teamNumber <= 6999) {
-      return "Milstein";
-    } else if (teamNumber >= 7000) {
-      return "Johnson";
-    }
-  } 
-  
-  // For other years, we could add more specific logic if needed
-  return null;
-}
-
-// Get division event key for a given division in a given year
-function getDivisionEventKey(division: string, year: number, knownDivisions: Record<string, Record<string, string>>): string | null {
-  const yearDivisions = knownDivisions[year.toString()];
-  if (!yearDivisions) return null;
-  
-  // Find the division code that matches the division name
-  for (const [code, name] of Object.entries(yearDivisions)) {
-    if (name === division) {
-      return `${year}${code}`;
-    }
-  }
-  
-  return null;
+  // Fall back to the event name provided by the API if no mapping exists
+  return eventName;
 }
 
 // Determine championship qualification status for teams at an event
@@ -257,41 +226,7 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
   try {
     log(`Getting championship status for teams at event ${eventKey}`, "blueAlliance");
     
-    // Hard-code known championship division names by year for accurate mappings
-    const knownDivisions: Record<string, Record<string, string>> = {
-      "2025": {
-        "arc": "Archimedes",
-        "cur": "Curie", 
-        "dal": "Daly",
-        "gal": "Galileo",
-        "hop": "Hopper",
-        "joh": "Johnson",
-        "mil": "Milstein",
-        "new": "Newton"
-      },
-      "2024": {
-        "arc": "Archimedes",
-        "cur": "Curie", 
-        "dal": "Daly",
-        "gal": "Galileo",
-        "hop": "Hopper",
-        "joh": "Johnson",
-        "mil": "Milstein",
-        "new": "Newton"
-      },
-      "2023": {
-        "arc": "Archimedes",
-        "car": "Carson", 
-        "cur": "Curie",
-        "dal": "Daly", 
-        "gal": "Galileo",
-        "hop": "Hopper",
-        "joh": "Johnson",
-        "mil": "Milstein",
-        "new": "Newton",
-        "tur": "Turing"
-      }
-    };
+    // We'll use our getDivisionName helper instead of hardcoded maps
     
     // Get world championship events for reference
     const championshipEvents = await getChampionshipEvents(year);
@@ -401,63 +336,23 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
             for (const div of divisions) {
               const divTeams = divTeamsMap[div.key] || [];
               if (divTeams.find((t: any) => t.key === teamKey)) {
-                // First try to get the division name from our known mappings
-                const divisionCode = div.key.split('20')[1]; // Extract division code (e.g., "new" from 2025new)
-                if (knownDivisions[year.toString()] && divisionCode && knownDivisions[year.toString()][divisionCode]) {
-                  division = knownDivisions[year.toString()][divisionCode];
-                } else {
-                  division = div.name; // Fallback to API name
-                }
+                    // Use our helper to get a readable division name
+                division = getDivisionName(div.key, year, div.name);
                 divisionEventKey = div.key;
                 break;
               }
             }
             
-            // Special case if team is in championship event but no division found
-            // Try to find division based on team number ranges
-            if (!division && teamKey.startsWith('frc')) {
-              const teamNumber = parseInt(teamKey.substring(3));
-              // Check team number against typical division assignments
-              // These are rough estimates based on historical patterns
-              if (teamNumber >= 1 && teamNumber <= 999) {
-                division = "Newton";
-              } else if (teamNumber >= 1000 && teamNumber <= 1999) {
-                division = "Galileo";
-              } else if (teamNumber >= 2000 && teamNumber <= 2999) {
-                division = "Hopper";
-              } else if (teamNumber >= 3000 && teamNumber <= 3999) {
-                division = "Archimedes";
-              } else if (teamNumber >= 4000 && teamNumber <= 4999) {
-                division = "Curie";
-              } else if (teamNumber >= 5000 && teamNumber <= 5999) {
-                division = "Daly";
-              } else if (teamNumber >= 6000 && teamNumber <= 6999) {
-                division = "Milstein";
-              } else if (teamNumber >= 7000) {
-                division = "Johnson";
-              }
-              
-              // If we assigned a division, try to find the corresponding event key
-              if (division) {
-                const divCode = Object.entries(knownDivisions[year.toString()])
-                  .find(([code, name]) => name === division)?.[0];
-                  
-                if (divCode) {
-                  const divKey = `${year}${divCode}`;
-                  divisionEventKey = divKey;
-                }
-              }
+            // If we didn't find a division, the API data is incomplete
+            // We'll leave division blank and rely on complete API data
+            if (!division) {
+              log(`No division found for qualified team ${teamKey} in championship ${championshipEventKey}`, "blueAlliance");
             }
           } else if (champEvent.event_type === 4) { // Division event
             divisionEventKey = champEvent.key;
             
-            // Try to get prettier division name from our mapping
-            const divisionCode = champEvent.key.split('20')[1];
-            if (knownDivisions[year.toString()] && divisionCode && knownDivisions[year.toString()][divisionCode]) {
-              division = knownDivisions[year.toString()][divisionCode];
-            } else {
-              division = champEvent.name;
-            }
+            // Use our helper to get a readable division name
+            division = getDivisionName(champEvent.key, year, champEvent.name);
           }
           
           // Enhanced logging to help debug the championship division lookup
@@ -473,31 +368,7 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
       
       const rankInfo = rankings[teamKey] || {};
       
-      // Division lookup for qualified teams, even if we found one already
-      // This ensures known team mappings always take priority
-      if (isQualified && teamKey.startsWith('frc')) {
-        const teamNumber = parseInt(teamKey.substring(3));
-        
-        // Use our helper to determine division based on team number
-        const predictedDivision = getTeamDivision(teamNumber, year);
-        if (predictedDivision) {
-          // If this is a known team with specific mapping, override any previous division assignment
-          // For other teams, only assign if no division was found
-          if (
-            (teamNumber === 4499) || // Team 4499 always uses our manual mapping
-            (!division) // For other teams, only use this if no division was found
-          ) {
-            division = predictedDivision;
-            
-            // Get division event key if possible
-            const divKey = getDivisionEventKey(division, year, knownDivisions);
-            if (divKey) {
-              divisionEventKey = divKey;
-              log(`Assigned team ${teamKey} to division ${division} based on team number pattern`, "blueAlliance");
-            }
-          }
-        }
-      }
+      // Only use API data for team division assignment - no hardcoding
       
       // Get championship performance data
       let championshipRank = null;
