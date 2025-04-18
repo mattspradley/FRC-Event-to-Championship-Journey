@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { X, RefreshCw, Search } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { Event, TeamWithStatus, fetchYears, searchEvents, fetchEventTeams } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -46,21 +46,36 @@ const EventSelector: React.FC<EventSelectorProps> = ({
     setFilteredEvents(events);
   }, [events]);
 
-  const { data: teams = [], isLoading: isTeamsLoading, refetch: refetchTeams } = useQuery({
+  const { data: teams = [], isLoading: isTeamsLoading, refetch: refetchTeams, error: teamsError } = useQuery({
     queryKey: ["/api/events", selectedEvent, "teams"],
     queryFn: () => fetchEventTeams(selectedEvent!),
     enabled: !!selectedEvent,
-    onSuccess: (data) => {
-      onTeamsLoaded(data);
-    },
-    onError: (error) => {
+    retry: 1,
+    retryDelay: 5000
+  });
+  
+  // Handle success and error with useEffect instead of in the useQuery options
+  useEffect(() => {
+    if (teams.length > 0) {
+      onTeamsLoaded(teams);
+      // Clear any previous error toasts
+      toast({
+        title: "Teams Loaded Successfully",
+        description: `Loaded ${teams.length} teams from event`,
+        variant: "default",
+      });
+    }
+  }, [teams, onTeamsLoaded, toast]);
+  
+  useEffect(() => {
+    if (teamsError) {
       toast({
         title: "Error loading teams",
-        description: String(error),
+        description: "API rate limit may have been reached. Please wait a minute and try again.",
         variant: "destructive",
       });
     }
-  });
+  }, [teamsError, toast]);
 
   useEffect(() => {
     // Close search results when clicking outside
