@@ -92,13 +92,13 @@ export async function getChampionshipEvents(year: number) {
   );
 }
 
-// Get championship main events (event_type=3)
+// Get championship main events (event_type=3) - these are the main championship events
 export async function getChampionshipFinals(year: number) {
   const events = await getEvents(year);
   return events.filter((event: any) => event.event_type === 3);
 }
 
-// Get championship divisions (event_type=4)
+// Get championship divisions (event_type=4) - these are the division events
 export async function getChampionshipDivisions(year: number) {
   const events = await getEvents(year);
   return events.filter((event: any) => event.event_type === 4);
@@ -199,9 +199,9 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
     // Get all the year's events to identify championships and divisions
     const allEvents = await fetchFromApi(`/events/${year}`);
     
-    // CRITICAL: Filter for Championship events (event_type=3) and division events (event_type=4)
-    // Note: According to original implementation, championship is 3 and divisions are 4
-    // This is the reverse of what we thought - reverting to original behavior
+    // CRITICAL: Championship events are event_type=3, division events are event_type=4
+    // According to TBA documentation: Championships=3, Divisions=4
+    // The qualification detection logic is correct with these event types
     const championshipEvents = allEvents.filter((event: any) => event.event_type === 3);
     const divisionEvents = allEvents.filter((event: any) => event.event_type === 4);
     
