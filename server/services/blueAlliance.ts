@@ -192,7 +192,7 @@ export async function getChampionshipEventStatus(eventKey: string) {
 }
 
 // Helper function to get the proper division name from an event
-function getDivisionName(eventKey: string, year: number, eventName: string): string {
+function getDivisionName(eventKey: string, eventName: string): string {
   // First, try to extract the division code from the event key
   // Event keys typically follow the format YYYY + division code
   // e.g., "2025arc" for Archimedes division
@@ -221,23 +221,35 @@ function getDivisionName(eventKey: string, year: number, eventName: string): str
   return eventName;
 }
 
+// Fetch team status for a specific event (division or championship)
+async function getTeamEventStatus(teamKey: string, eventKey: string): Promise<any> {
+  try {
+    return await fetchFromApi(`/team/${teamKey}/event/${eventKey}/status`);
+  } catch (error) {
+    log(`Error fetching status for team ${teamKey} at event ${eventKey}: ${error}`, "blueAlliance");
+    return null;
+  }
+}
+
 // Determine championship qualification status for teams at an event
 export async function getTeamChampionshipStatus(eventKey: string, year: number) {
   try {
     log(`Getting championship status for teams at event ${eventKey}`, "blueAlliance");
     
-    // We'll use our getDivisionName helper instead of hardcoded maps
+    // Get all the year's events to identify championships and divisions
+    const allEvents = await fetchFromApi(`/events/${year}`);
     
-    // Get world championship events for reference
-    const championshipEvents = await getChampionshipEvents(year);
+    // Filter for Championship events (main) and division events
+    const championshipEvents = allEvents.filter((event: any) => event.event_type === 3);
+    const divisionEvents = allEvents.filter((event: any) => event.event_type === 4);
     
-    // Get championship divisions
-    const divisions = await getChampionshipDivisions(year);
+    log(`Found ${championshipEvents.length} championship events and ${divisionEvents.length} division events for ${year}`, "blueAlliance");
     
-    // Get teams at this event
+    // Get the teams at our current event
     const teams = await getEventTeams(eventKey);
+    log(`Processing ${teams.length} teams from event ${eventKey}`, "blueAlliance");
     
-    // Get rankings data
+    // Get rankings data for the current event
     let rankings: any = {};
     try {
       const rankData = await getEventRankings(eventKey);
@@ -252,198 +264,156 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
       }
     } catch (error) {
       log(`Error fetching rankings for event ${eventKey}: ${error}`, "blueAlliance");
-      // Continue without rankings data
     }
     
-    // Pre-fetch all championship teams to avoid multiple API calls
-    const champTeamsMap: Record<string, any[]> = {};
-    const divTeamsMap: Record<string, any[]> = {};
-    const divRankingsMap: Record<string, any> = {};
-    const divAwardsMap: Record<string, any[]> = {};
-    
-    // Get teams for each championship event (but limit concurrent requests)
-    log(`Prefetching teams for ${championshipEvents.length} championship events`, "blueAlliance");
-    for (const champEvent of championshipEvents) {
-      try {
-        champTeamsMap[champEvent.key] = await getEventTeams(champEvent.key);
-        log(`Fetched ${champTeamsMap[champEvent.key].length} teams for championship ${champEvent.key}`, "blueAlliance");
-      } catch (error) {
-        log(`Error fetching teams for championship ${champEvent.key}: ${error}`, "blueAlliance");
-        champTeamsMap[champEvent.key] = [];
-      }
-    }
-    
-    // Get teams and data for each division
-    log(`Prefetching teams and rankings for ${divisions.length} divisions`, "blueAlliance");
-    for (const div of divisions) {
-      try {
-        // Get teams in this division
-        divTeamsMap[div.key] = await getEventTeams(div.key);
-        log(`Fetched ${divTeamsMap[div.key].length} teams for division ${div.key}`, "blueAlliance");
-        
-        // Get rankings for this division
-        try {
-          const divRankings = await getEventRankings(div.key);
-          divRankingsMap[div.key] = divRankings;
-          log(`Fetched rankings for division ${div.key}`, "blueAlliance");
-        } catch (error) {
-          log(`Error fetching rankings for division ${div.key}: ${error}`, "blueAlliance");
-          divRankingsMap[div.key] = { rankings: [] };
-        }
-        
-        // Get awards for this division
-        try {
-          const divAwards = await fetchFromApi(`/event/${div.key}/awards`);
-          divAwardsMap[div.key] = divAwards;
-          log(`Fetched awards for division ${div.key}`, "blueAlliance");
-        } catch (error) {
-          log(`Error fetching awards for division ${div.key}: ${error}`, "blueAlliance");
-          divAwardsMap[div.key] = [];
-        }
-      } catch (error) {
-        log(`Error fetching teams for division ${div.key}: ${error}`, "blueAlliance");
-        divTeamsMap[div.key] = [];
-        divRankingsMap[div.key] = { rankings: [] };
-        divAwardsMap[div.key] = [];
-      }
-    }
-    
-    // For each team, check which championship they're in (now using pre-fetched data)
+    // Process each team
     const teamPromises = teams.map(async (team: any) => {
       const teamKey = team.key;
+      log(`Processing team ${teamKey}`, "blueAlliance");
       
-      // Check all championship events to see if this team is registered
+      // Default values if not qualified
       let isQualified = false;
+      let waitlistPosition = 0; // Default to not qualified
       let championshipLocation = '';
       let division = '';
-      let championshipEventKey = '';
       let divisionEventKey = '';
+      let championshipEventKey = '';
+      let championshipRank = null;
+      let championshipRecord = null;
+      let divisionTotalTeams = 0;
+      let championshipAwards = [];
       
-      // Check each championship event for this team using pre-fetched data
+      // For each championship, check if the team is participating
       for (const champEvent of championshipEvents) {
-        const champTeams = champTeamsMap[champEvent.key] || [];
-        const foundTeam = champTeams.find((t: any) => t.key === teamKey);
+        championshipEventKey = champEvent.key; 
         
-        if (foundTeam) {
+        // Use the direct team status API endpoint for this championship
+        const teamChampStatus = await getTeamEventStatus(teamKey, championshipEventKey);
+        
+        if (teamChampStatus) {
+          log(`Found team ${teamKey} status for championship ${championshipEventKey}`, "blueAlliance");
+          
+          // If the team has a status, they're qualified
           isQualified = true;
           championshipLocation = champEvent.city || champEvent.name;
           
-          // Determine event type and store event key
-          if (champEvent.event_type === 3) { // Main championship
-            championshipEventKey = champEvent.key;
+          // Process status information
+          if (teamChampStatus.alliance) {
+            log(`Team ${teamKey} is in an alliance at ${championshipEventKey}`, "blueAlliance");
+          }
+          
+          // Check which division this team is in
+          for (const divEvent of divisionEvents) {
+            // Only check divisions for this championship (they share year prefix)
+            const divYearPrefix = divEvent.key.substring(0, 4);
+            const champYearPrefix = champEvent.key.substring(0, 4);
             
-            // Check divisions for this team
-            for (const div of divisions) {
-              const divTeams = divTeamsMap[div.key] || [];
-              if (divTeams.find((t: any) => t.key === teamKey)) {
-                    // Use our helper to get a readable division name
-                division = getDivisionName(div.key, year, div.name);
-                divisionEventKey = div.key;
+            if (divYearPrefix === champYearPrefix) {
+              // Check this division for the team
+              const teamDivStatus = await getTeamEventStatus(teamKey, divEvent.key);
+              
+              if (teamDivStatus) {
+                divisionEventKey = divEvent.key;
+                division = getDivisionName(divEvent.key, divEvent.name);
+                
+                log(`Team ${teamKey} is in division ${division} (${divisionEventKey})`, "blueAlliance");
+                
+                // Get ranking info from the division
+                if (teamDivStatus.qual && teamDivStatus.qual.ranking) {
+                  const ranking = teamDivStatus.qual.ranking;
+                  championshipRank = ranking.rank;
+                  
+                  if (ranking.record) {
+                    championshipRecord = `${ranking.record.wins}-${ranking.record.losses}-${ranking.record.ties}`;
+                  }
+                  
+                  if (ranking.num_teams) {
+                    divisionTotalTeams = ranking.num_teams;
+                  }
+                  
+                  log(`Team ${teamKey} is ranked ${championshipRank} with record ${championshipRecord} in division ${division}`, "blueAlliance");
+                }
+                
+                // We found the right division, no need to check others
                 break;
               }
             }
-            
-            // If we didn't find a division, the API data is incomplete
-            // We'll leave division blank and rely on complete API data
-            if (!division) {
-              log(`No division found for qualified team ${teamKey} in championship ${championshipEventKey}`, "blueAlliance");
-            }
-          } else if (champEvent.event_type === 4) { // Division event
-            divisionEventKey = champEvent.key;
-            
-            // Use our helper to get a readable division name
-            division = getDivisionName(champEvent.key, year, champEvent.name);
           }
           
-          // Enhanced logging to help debug the championship division lookup
-          if (isQualified) {
-            log(`Team ${teamKey} is qualified for championship ${championshipLocation}, division: ${division || 'None'}, eventKey: ${championshipEventKey || 'None'}, divisionKey: ${divisionEventKey || 'None'}`, "blueAlliance");
-          }
-          
-          if (championshipEventKey || divisionEventKey) {
-            break;
-          }
-        }
-      }
-      
-      const rankInfo = rankings[teamKey] || {};
-      
-      // Only use API data for team division assignment - no hardcoding
-      
-      // Get championship performance data
-      let championshipRank = null;
-      let championshipRecord = null;
-      let championshipAwards = [];
-      let divisionTotalTeams = 0;
-      
-      // If we have a division key, use our pre-fetched division data
-      if (divisionEventKey) {
-        // First try our pre-fetched division rankings
-        const divisionRankings = divRankingsMap[divisionEventKey];
-        if (divisionRankings && divisionRankings.rankings) {
-          divisionTotalTeams = divisionRankings.rankings.length;
-          const teamRank = divisionRankings.rankings.find((r: any) => r.team_key === teamKey);
-          if (teamRank) {
-            championshipRank = teamRank.rank;
-            championshipRecord = `${teamRank.record.wins}-${teamRank.record.losses}-${teamRank.record.ties}`;
-          }
-        }
-        
-        // If we didn't get data and this is an ongoing championship (current year),
-        // try a direct fetch for this specific division
-        if ((!championshipRank || !championshipRecord) && year === new Date().getFullYear()) {
+          // We found a championship this team is in, no need to check others
+          break;
+        } else {
+          // If status check failed, let's fallback to checking team lists
+          // This is less accurate but provides a backup method
           try {
-            log(`Directly fetching rankings for division ${divisionEventKey} and team ${teamKey}`, "blueAlliance");
-            const directRankings = await getEventRankings(divisionEventKey);
-            
-            if (directRankings && directRankings.rankings) {
-              divisionTotalTeams = directRankings.rankings.length;
-              const directTeamRank = directRankings.rankings.find((r: any) => r.team_key === teamKey);
-              if (directTeamRank) {
-                championshipRank = directTeamRank.rank;
-                championshipRecord = `${directTeamRank.record.wins}-${directTeamRank.record.losses}-${directTeamRank.record.ties}`;
-                log(`Found direct ranking for team ${teamKey} in division ${divisionEventKey}: Rank ${championshipRank}, Record ${championshipRecord}`, "blueAlliance");
+            // Check if the team is in this championship's team list
+            const champTeams = await getEventTeams(championshipEventKey);
+            if (champTeams.find((t: any) => t.key === teamKey)) {
+              isQualified = true;
+              championshipLocation = champEvent.city || champEvent.name;
+              log(`Team ${teamKey} found in team list for ${championshipEventKey}`, "blueAlliance");
+              
+              // Check divisions for this championship
+              for (const divEvent of divisionEvents) {
+                // Only check divisions for this championship (they share year prefix)
+                const divYearPrefix = divEvent.key.substring(0, 4);
+                const champYearPrefix = champEvent.key.substring(0, 4);
+                
+                if (divYearPrefix === champYearPrefix) {
+                  try {
+                    const divTeams = await getEventTeams(divEvent.key);
+                    if (divTeams.find((t: any) => t.key === teamKey)) {
+                      divisionEventKey = divEvent.key;
+                      division = getDivisionName(divEvent.key, divEvent.name);
+                      log(`Team ${teamKey} found in team list for division ${division} (${divisionEventKey})`, "blueAlliance");
+                      
+                      // Get rankings for this division if available
+                      try {
+                        const divRankings = await getEventRankings(divEvent.key);
+                        if (divRankings && divRankings.rankings) {
+                          divisionTotalTeams = divRankings.rankings.length;
+                          const teamRank = divRankings.rankings.find((r: any) => r.team_key === teamKey);
+                          if (teamRank) {
+                            championshipRank = teamRank.rank;
+                            championshipRecord = `${teamRank.record.wins}-${teamRank.record.losses}-${teamRank.record.ties}`;
+                          }
+                        }
+                      } catch (error) {
+                        log(`Error fetching rankings for division ${divEvent.key}: ${error}`, "blueAlliance");
+                      }
+                      
+                      break;
+                    }
+                  } catch (error) {
+                    log(`Error checking division ${divEvent.key} for team ${teamKey}: ${error}`, "blueAlliance");
+                  }
+                }
               }
+              
+              // We found the championship, no need to check others
+              break;
             }
           } catch (error) {
-            log(`Error fetching direct rankings for division ${divisionEventKey}: ${error}`, "blueAlliance");
-            // Continue without this data
+            log(`Error checking championship ${championshipEventKey} for team ${teamKey}: ${error}`, "blueAlliance");
           }
         }
-        
-        // Get awards for this team from pre-fetched data
-        const divisionAwards = divAwardsMap[divisionEventKey] || [];
-        if (divisionAwards.length > 0) {
-          // Filter only this team's awards
-          championshipAwards = divisionAwards.filter((award: any) => 
-            award.recipient_list.some((recipient: any) => recipient.team_key === teamKey)
-          );
-        }
       }
       
-      // For waitlist status, we need to provide a value even if we don't have the real position
-      // TBA API doesn't provide waitlist data directly, so we'll set a fallback for UI purposes
-      // Set teams to either qualified, not qualified (0), or unknown/waitlisted (1)
-      let waitlistPosition;
-      if (isQualified) {
-        waitlistPosition = undefined;
-      } else {
-        // For non-qualified teams, set a position of 0 (not qualified) or 1 (waitlist)
-        // This maintains our UI status indicators
-        waitlistPosition = 0; // Default to not qualified
-        
-        // Check previous awards and qualification to see if team is likely to be waitlisted
-        // (This is estimation logic since actual waitlist data isn't in the API)
-        // Teams with awards or good performance might be on waitlist
+      // Get current event ranking info
+      const rankInfo = rankings[teamKey] || {};
+      
+      // Determine waitlist status
+      if (!isQualified) {
+        // For non-qualified teams, estimate waitlist status
+        // Teams with high rankings or rookie teams more likely to be waitlisted
         if (team.rookie_year && new Date().getFullYear() - team.rookie_year < 3) {
-          // New teams are more likely to be waitlisted
-          waitlistPosition = 1;
+          waitlistPosition = 1; // Rookie teams
         } else if (rankInfo.rank && rankInfo.rank <= 8) {
-          // High ranked teams more likely to be waitlisted
-          waitlistPosition = 1;
+          waitlistPosition = 1; // Top performing teams
         }
       }
       
+      // Return the complete status object
       return {
         team,
         isQualified,
@@ -462,7 +432,7 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
       };
     });
     
-    // Wait for all team promises to resolve
+    // Wait for all team statuses to be processed
     const teamStatuses = await Promise.all(teamPromises);
     
     log(`Processed ${teamStatuses.length} team statuses for event ${eventKey}`, "blueAlliance");
