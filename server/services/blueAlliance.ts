@@ -226,6 +226,8 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
     // Pre-fetch all championship teams to avoid multiple API calls
     const champTeamsMap: Record<string, any[]> = {};
     const divTeamsMap: Record<string, any[]> = {};
+    const divRankingsMap: Record<string, any> = {};
+    const divAwardsMap: Record<string, any[]> = {};
     
     // Get teams for each championship event (but limit concurrent requests)
     log(`Prefetching teams for ${championshipEvents.length} championship events`, "blueAlliance");
@@ -239,15 +241,38 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
       }
     }
     
-    // Get teams for each division
-    log(`Prefetching teams for ${divisions.length} divisions`, "blueAlliance");
+    // Get teams and data for each division
+    log(`Prefetching teams and rankings for ${divisions.length} divisions`, "blueAlliance");
     for (const div of divisions) {
       try {
+        // Get teams in this division
         divTeamsMap[div.key] = await getEventTeams(div.key);
         log(`Fetched ${divTeamsMap[div.key].length} teams for division ${div.key}`, "blueAlliance");
+        
+        // Get rankings for this division
+        try {
+          const divRankings = await getEventRankings(div.key);
+          divRankingsMap[div.key] = divRankings;
+          log(`Fetched rankings for division ${div.key}`, "blueAlliance");
+        } catch (error) {
+          log(`Error fetching rankings for division ${div.key}: ${error}`, "blueAlliance");
+          divRankingsMap[div.key] = { rankings: [] };
+        }
+        
+        // Get awards for this division
+        try {
+          const divAwards = await fetchFromApi(`/event/${div.key}/awards`);
+          divAwardsMap[div.key] = divAwards;
+          log(`Fetched awards for division ${div.key}`, "blueAlliance");
+        } catch (error) {
+          log(`Error fetching awards for division ${div.key}: ${error}`, "blueAlliance");
+          divAwardsMap[div.key] = [];
+        }
       } catch (error) {
         log(`Error fetching teams for division ${div.key}: ${error}`, "blueAlliance");
         divTeamsMap[div.key] = [];
+        divRankingsMap[div.key] = { rankings: [] };
+        divAwardsMap[div.key] = [];
       }
     }
     
@@ -303,39 +328,37 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
       let championshipAwards = [];
       let divisionTotalTeams = 0;
       
-      // If we have a division key, get the team's performance in that division
+      // If we have a division key, use our pre-fetched division data
       if (divisionEventKey) {
-        try {
-          // Get division rankings
-          const divisionRankings = await getEventRankings(divisionEventKey);
-          if (divisionRankings && divisionRankings.rankings) {
-            divisionTotalTeams = divisionRankings.rankings.length;
-            const teamRank = divisionRankings.rankings.find((r: any) => r.team_key === teamKey);
-            if (teamRank) {
-              championshipRank = teamRank.rank;
-              championshipRecord = `${teamRank.record.wins}-${teamRank.record.losses}-${teamRank.record.ties}`;
-            }
+        // Get division rankings from pre-fetched data
+        const divisionRankings = divRankingsMap[divisionEventKey];
+        if (divisionRankings && divisionRankings.rankings) {
+          divisionTotalTeams = divisionRankings.rankings.length;
+          const teamRank = divisionRankings.rankings.find((r: any) => r.team_key === teamKey);
+          if (teamRank) {
+            championshipRank = teamRank.rank;
+            championshipRecord = `${teamRank.record.wins}-${teamRank.record.losses}-${teamRank.record.ties}`;
           }
-          
-          // Get awards for this team at this event
-          try {
-            const divisionAwards = await fetchFromApi(`/team/${teamKey}/event/${divisionEventKey}/awards`);
-            if (divisionAwards && divisionAwards.length > 0) {
-              championshipAwards = divisionAwards;
-            }
-          } catch (error) {
-            // Awards might not be available, that's OK
-            log(`No awards found for team ${teamKey} at event ${divisionEventKey}`, "blueAlliance");
-          }
-        } catch (error) {
-          log(`Error fetching championship division data for team ${teamKey}: ${error}`, "blueAlliance");
+        }
+        
+        // Get awards for this team from pre-fetched data
+        const divisionAwards = divAwardsMap[divisionEventKey] || [];
+        if (divisionAwards.length > 0) {
+          // Filter only this team's awards
+          championshipAwards = divisionAwards.filter((award: any) => 
+            award.recipient_list.some((recipient: any) => recipient.team_key === teamKey)
+          );
         }
       }
+      
+      // For waitlist, set position to undefined if qualified
+      // If we had API access to the real waitlist position, we would fetch it here
+      // Currently TBA API doesn't provide waitlist position, so we leave it as undefined for now
       
       return {
         team,
         isQualified,
-        waitlistPosition: isQualified ? undefined : (Math.random() > 0.7 ? Math.floor(Math.random() * 10) + 1 : 0), // Mock waitlist for demo
+        waitlistPosition: isQualified ? undefined : undefined, // Real waitlist data would go here if available
         championshipLocation,
         division,
         divisionEventKey,
