@@ -88,18 +88,18 @@ export async function getEventRankings(eventKey: string) {
 export async function getChampionshipEvents(year: number) {
   const events = await getEvents(year);
   return events.filter((event: any) => 
-    event.event_type === 3 || event.event_type === 4 || event.event_type === 5 // Division (3), Championship (4) & Festival of Champions (5)
+    event.event_type === 3 || event.event_type === 4 || event.event_type === 5 // Championship (3), Division (4) & Festival of Champions (5)
   );
 }
 
-// Get championship divisions (event_type=3)
-export async function getChampionshipDivisions(year: number) {
+// Get championship main events (event_type=3)
+export async function getChampionshipFinals(year: number) {
   const events = await getEvents(year);
   return events.filter((event: any) => event.event_type === 3);
 }
 
-// Get championship finals events (event_type=4)
-export async function getChampionshipFinals(year: number) {
+// Get championship divisions (event_type=4)
+export async function getChampionshipDivisions(year: number) {
   const events = await getEvents(year);
   return events.filter((event: any) => event.event_type === 4);
 }
@@ -199,10 +199,11 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
     // Get all the year's events to identify championships and divisions
     const allEvents = await fetchFromApi(`/events/${year}`);
     
-    // Filter for Championship finals (event_type=4) and division events (event_type=3)
-    // Note: According to TBA API, event_type=3 are division events, event_type=4 are championship events
-    const championshipEvents = allEvents.filter((event: any) => event.event_type === 4);
-    const divisionEvents = allEvents.filter((event: any) => event.event_type === 3);
+    // CRITICAL: Filter for Championship events (event_type=3) and division events (event_type=4)
+    // Note: According to original implementation, championship is 3 and divisions are 4
+    // This is the reverse of what we thought - reverting to original behavior
+    const championshipEvents = allEvents.filter((event: any) => event.event_type === 3);
+    const divisionEvents = allEvents.filter((event: any) => event.event_type === 4);
     
     // Add detailed logging of the events
     log(`Found ${championshipEvents.length} championship events and ${divisionEvents.length} division events for ${year}`, "blueAlliance");
