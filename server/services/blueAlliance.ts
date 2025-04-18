@@ -230,7 +230,7 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
       let championshipRank = null;
       let championshipRecord = null;
       let divisionTotalTeams = 0;
-      let championshipAwards = [];
+      let championshipAwards: any[] = [];
       
       // For each championship, check if the team is participating
       for (const champEvent of championshipEvents) {
@@ -373,7 +373,7 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
         championshipEventKey,
         championshipRank,
         championshipRecord,
-        championshipAwards,
+        championshipAwards: championshipAwards,
         divisionTotalTeams,
         rank: rankInfo.rank,
         record: rankInfo.record,
