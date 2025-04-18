@@ -5,57 +5,6 @@ import { log } from "../vite";
 // Set cache duration in seconds
 const CACHE_DURATION = 86400; // 24 hours - Use longer cache for championship data which changes infrequently
 
-// API rate limiting
-const API_REQUESTS_PER_MINUTE = 25; // Set slightly below the limit to be safe
-let requestsThisMinute = 0;
-let lastRequestReset = Date.now();
-let requestQueue: (() => Promise<void>)[] = [];
-let isProcessingQueue = false;
-
-// Process the queue of API requests
-const processQueue = async () => {
-  if (isProcessingQueue || requestQueue.length === 0) return;
-  
-  isProcessingQueue = true;
-  
-  try {
-    while (requestQueue.length > 0) {
-      // Check if we need to wait for rate limit
-      await checkRateLimit();
-      
-      // Execute the next request in the queue
-      const nextRequest = requestQueue.shift();
-      if (nextRequest) {
-        await nextRequest();
-      }
-    }
-  } finally {
-    isProcessingQueue = false;
-  }
-};
-
-// Handle rate limiting
-const checkRateLimit = async () => {
-  const now = Date.now();
-  
-  // Reset counter if a minute has passed
-  if (now - lastRequestReset > 60000) {
-    requestsThisMinute = 0;
-    lastRequestReset = now;
-  }
-  
-  // Check if we've exceeded our rate limit
-  if (requestsThisMinute >= API_REQUESTS_PER_MINUTE) {
-    const waitTime = 60000 - (now - lastRequestReset) + 1000; // Add 1 second buffer
-    log(`Rate limit reached. Waiting ${waitTime}ms before next request.`, "blueAlliance");
-    await new Promise(resolve => setTimeout(resolve, waitTime));
-    requestsThisMinute = 0;
-    lastRequestReset = Date.now();
-  }
-  
-  requestsThisMinute++;
-};
-
 // Helper to get data from API with caching
 export async function fetchFromApi(endpoint: string): Promise<any> {
   if (!process.env.TBA_API_KEY) {
@@ -63,51 +12,51 @@ export async function fetchFromApi(endpoint: string): Promise<any> {
   }
   
   const cacheKey = `tba:${endpoint}`;
+  const apiUrl = `https://www.thebluealliance.com/api/v3${endpoint}`;
   
   // Try to get from cache first
   const cachedData = await storage.getCachedData(cacheKey);
   if (cachedData) {
+    log(`CACHE HIT: ${apiUrl}`, "blueAlliance");
     return cachedData;
   }
   
-  // Create a promise that will be resolved when the API call completes
-  return new Promise((resolve, reject) => {
-    // Add this request to the queue
-    const requestFunction = async () => {
-      try {
-        const apiKey = process.env.TBA_API_KEY;
-        if (!apiKey) {
-          throw new Error("The Blue Alliance API key not found in environment variables");
-        }
-        
-        const response = await fetch(`https://www.thebluealliance.com/api/v3${endpoint}`, {
-          headers: {
-            "X-TBA-Auth-Key": apiKey
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        // Cache the result
-        await storage.setCachedData(cacheKey, data, CACHE_DURATION);
-        
-        resolve(data);
-      } catch (error) {
-        log(`Error fetching from TBA API: ${error}`, "blueAlliance");
-        reject(error);
-      }
-    };
+  log(`API CALL: ${apiUrl}`, "blueAlliance");
+  
+  try {
+    const apiKey = process.env.TBA_API_KEY;
+    if (!apiKey) {
+      throw new Error("The Blue Alliance API key not found in environment variables");
+    }
     
-    // Add to queue and start processing if not already
-    requestQueue.push(requestFunction);
-    processQueue().catch(error => {
-      log(`Error processing request queue: ${error}`, "blueAlliance");
+    const startTime = Date.now();
+    const response = await fetch(apiUrl, {
+      headers: {
+        "X-TBA-Auth-Key": apiKey
+      }
     });
-  });
+    const endTime = Date.now();
+    
+    log(`API RESPONSE: ${apiUrl} - ${response.status} in ${endTime - startTime}ms`, "blueAlliance");
+    
+    if (!response.ok) {
+      // If we hit rate limit, throw specific error
+      if (response.status === 429) {
+        throw new Error(`API RATE LIMIT EXCEEDED: The Blue Alliance API rate limit reached. Please try again later.`);
+      }
+      throw new Error(`API ERROR: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Cache the result
+    await storage.setCachedData(cacheKey, data, CACHE_DURATION);
+    
+    return data;
+  } catch (error: any) {
+    log(`API ERROR: ${apiUrl} - ${error}`, "blueAlliance");
+    throw error;
+  }
 }
 
 // Get all events for a year
