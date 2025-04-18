@@ -2,6 +2,7 @@ import React from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -27,11 +28,14 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg" description={`Team ${team.team.team_number} championship status and performance details`}>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
             Team {team.team.team_number}: {team.team.nickname || team.team.name}
           </DialogTitle>
+          <DialogDescription>
+            Championship status and performance details
+          </DialogDescription>
         </DialogHeader>
         
         <div className="mt-4">
