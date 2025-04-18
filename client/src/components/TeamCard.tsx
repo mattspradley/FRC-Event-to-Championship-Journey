@@ -69,20 +69,40 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails }) => {
               <span className="font-medium ml-1">{team.record || "N/A"}</span>
             </div>
             
-            {/* Championship info */}
-            <div>
-              <span className="text-muted-foreground">Championship:</span>
-              <span className="font-medium ml-1">
-                {team.isQualified ? team.championshipLocation || "Yes" : (status === "waitlist" ? "Pending" : "N/A")}
-              </span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Division:</span>
-              <span className="font-medium ml-1">{team.division || (status === "waitlist" ? "TBD" : "N/A")}</span>
-            </div>
+            {/* Local event rankings */}
+            {!team.isQualified && (
+              <>
+                <div>
+                  <span className="text-muted-foreground">Championship:</span>
+                  <span className="font-medium ml-1">
+                    {status === "waitlist" ? "Pending" : "N/A"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Division:</span>
+                  <span className="font-medium ml-1">{status === "waitlist" ? "TBD" : "N/A"}</span>
+                </div>
+              </>
+            )}
             
-            {/* Championship division performance - only show if qualified and has division */}
-            {team.isQualified && team.division && (
+            {/* Championship qualification info - always show if qualified */}
+            {team.isQualified && (
+              <>
+                <div>
+                  <span className="text-muted-foreground">Championship:</span>
+                  <span className="font-medium ml-1">
+                    {team.championshipLocation || "Yes"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Division:</span>
+                  <span className="font-medium ml-1">{team.division || "TBD"}</span>
+                </div>
+              </>
+            )}
+            
+            {/* Always show all ranks for qualified teams */}
+            {team.isQualified && (
               <>
                 <div>
                   <span className="text-muted-foreground">Division Rank:</span>
@@ -97,21 +117,19 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails }) => {
               </>
             )}
             
-            {/* Final championship performance - only show if qualified and has final data */}
+            {/* Finals info - only show if qualified and has finals data */}
             {team.isQualified && team.finalEventKey && (
               <>
                 <div>
-                  <span className="text-muted-foreground">Championship Status:</span>
+                  <span className="text-muted-foreground">Finals Rank:</span>
                   <span className="font-medium ml-1">
                     {team.finalRank || "Competing"}
                   </span>
                 </div>
-                {team.finalRecord && (
-                  <div>
-                    <span className="text-muted-foreground">Finals Record:</span>
-                    <span className="font-medium ml-1">{team.finalRecord}</span>
-                  </div>
-                )}
+                <div>
+                  <span className="text-muted-foreground">Finals Record:</span>
+                  <span className="font-medium ml-1">{team.finalRecord || "TBD"}</span>
+                </div>
               </>
             )}
           </div>
