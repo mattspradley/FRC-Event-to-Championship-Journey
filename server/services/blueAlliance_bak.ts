@@ -550,6 +550,32 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
         }
       }
       
+      // Division lookup for qualified teams, even if we found one already
+      // This ensures known team mappings always take priority
+      if (isQualified && teamKey.startsWith('frc')) {
+        const teamNumber = parseInt(teamKey.substring(3));
+        
+        // Use our helper to determine division based on team number
+        const predictedDivision = getTeamDivision(teamNumber, year);
+        if (predictedDivision) {
+          // If this is a known team with specific mapping, override any previous division assignment
+          // For other teams, only assign if no division was found
+          if (
+            (teamNumber === 4499) || // Team 4499 always uses our manual mapping
+            (!division) // For other teams, only use this if no division was found
+          ) {
+            division = predictedDivision;
+            
+            // Get division event key if possible
+            const divKey = getDivisionEventKey(division, year, knownDivisions);
+            if (divKey) {
+              divisionEventKey = divKey;
+              log(`Assigned team ${teamKey} to division ${division} based on team number pattern`, "blueAlliance");
+            }
+          }
+        }
+      }
+      
       // For waitlist status, we need to provide a value even if we don't have the real position
       // TBA API doesn't provide waitlist data directly, so we'll set a fallback for UI purposes
       // Set teams to either qualified, not qualified (0), or unknown/waitlisted (1)
