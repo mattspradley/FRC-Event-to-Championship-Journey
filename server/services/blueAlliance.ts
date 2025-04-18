@@ -84,18 +84,24 @@ export async function getEventRankings(eventKey: string) {
   return fetchFromApi(`/event/${eventKey}/rankings`);
 }
 
-// Get championship events for a year
+// Get all championship-related events for a year
 export async function getChampionshipEvents(year: number) {
   const events = await getEvents(year);
   return events.filter((event: any) => 
-    event.event_type === 3 || event.event_type === 4 || event.event_type === 5 // Championship, Championship Division & Festival of Champions
+    event.event_type === 3 || event.event_type === 4 || event.event_type === 5 // Division (3), Championship (4) & Festival of Champions (5)
   );
 }
 
-// Get championship divisions (for mapping teams to divisions)
+// Get championship divisions (event_type=3)
 export async function getChampionshipDivisions(year: number) {
-  const championships = await getChampionshipEvents(year);
-  return championships.filter((event: any) => event.event_type === 4);
+  const events = await getEvents(year);
+  return events.filter((event: any) => event.event_type === 3);
+}
+
+// Get championship finals events (event_type=4)
+export async function getChampionshipFinals(year: number) {
+  const events = await getEvents(year);
+  return events.filter((event: any) => event.event_type === 4);
 }
 
 // Get event results/status for a specific championship event
@@ -193,9 +199,10 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
     // Get all the year's events to identify championships and divisions
     const allEvents = await fetchFromApi(`/events/${year}`);
     
-    // Filter for Championship events (main) and division events
-    const championshipEvents = allEvents.filter((event: any) => event.event_type === 3);
-    const divisionEvents = allEvents.filter((event: any) => event.event_type === 4);
+    // Filter for Championship finals (event_type=4) and division events (event_type=3)
+    // Note: According to TBA API, event_type=3 are division events, event_type=4 are championship events
+    const championshipEvents = allEvents.filter((event: any) => event.event_type === 4);
+    const divisionEvents = allEvents.filter((event: any) => event.event_type === 3);
     
     log(`Found ${championshipEvents.length} championship events and ${divisionEvents.length} division events for ${year}`, "blueAlliance");
     
@@ -391,38 +398,9 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
           }
         }
         
-        // If we still don't have a division but team is qualified, handle special cases
+        // Note: All division assignments should come from API data
         if (!division) {
-          log(`Still no division found for team ${teamKey}, checking special cases`, "blueAlliance");
-          
-          // Parse team number from team key
-          const teamNumberStr = teamKey.substring(3); // Remove "frc" prefix
-          const teamNumber = parseInt(teamNumberStr);
-          
-          if (!isNaN(teamNumber)) {
-            // Special case for Team 4499 - should be in Newton division for 2025
-            if (teamNumber === 4499 && championshipEventKey.startsWith("2025")) {
-              for (const divEvent of divisionEvents) {
-                if (divEvent.key.includes("new") && divEvent.key.startsWith("2025")) {
-                  division = "Newton";
-                  divisionEventKey = divEvent.key;
-                  log(`Specially assigning team 4499 to Newton division for 2025`, "blueAlliance");
-                  break;
-                }
-              }
-            }
-            // Special case for Team 4068 - should be in Daly division for 2025
-            else if (teamNumber === 4068 && championshipEventKey.startsWith("2025")) {
-              for (const divEvent of divisionEvents) {
-                if (divEvent.key.includes("dal") && divEvent.key.startsWith("2025")) {
-                  division = "Daly";
-                  divisionEventKey = divEvent.key;
-                  log(`Specially assigning team 4068 to Daly division for 2025`, "blueAlliance");
-                  break;
-                }
-              }
-            }
-          }
+          log(`No division found for team ${teamKey} from API data`, "blueAlliance");
         }
       }
       
