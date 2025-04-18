@@ -29,13 +29,23 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails }) => {
   };
   
   return (
-    <div className={`bg-white rounded-lg shadow-md overflow-hidden border-t-4 ${statusColorClasses[statusColor]}`}>
+    <div className={`bg-white rounded-lg shadow-md overflow-hidden border-t-4 ${
+        statusColor === "success" ? statusColorClasses.success :
+        statusColor === "warning" ? statusColorClasses.warning :
+        statusColor === "destructive" ? statusColorClasses.destructive :
+        statusColorClasses.muted
+      }`}>
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-mono text-xl font-medium">Team {team.team.team_number}</h3>
           <Badge 
             variant={statusColor === "muted" ? "secondary" : statusColor as any}
-            className={badgeClasses[statusColor]}
+            className={
+              statusColor === "success" ? badgeClasses.success :
+              statusColor === "warning" ? badgeClasses.warning :
+              statusColor === "destructive" ? badgeClasses.destructive :
+              badgeClasses.muted
+            }
           >
             {statusText}
           </Badge>
