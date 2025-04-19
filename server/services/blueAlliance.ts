@@ -354,7 +354,6 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
         if (divStatuses[teamKey]) {
           // If team is in any division, they are qualified
           isQualified = true;
-          foundInDivision = true;
           divisionEventKey = divEvent.key;
           division = getDivisionName(divEvent.key, divEvent.name);
           
@@ -423,6 +422,11 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
           if (!championshipEventKey) {
             championshipEventKey = champKey;
             championshipLocation = champEvent.city || champEvent.name;
+          }
+          
+          // If we haven't already marked this team as qualified (from a division check)
+          if (!isQualified) {
+            isQualified = true;
           }
           
           // Get championship status details
