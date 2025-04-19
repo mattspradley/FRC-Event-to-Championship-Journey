@@ -478,6 +478,7 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
       
       // Get current event ranking info
       const rankInfo = rankings[teamKey] || {};
+      log(`Team ${teamKey} current event rank info: ${JSON.stringify(rankInfo)}`, "blueAlliance");
       
       // Determine waitlist status
       if (!isQualified) {
