@@ -330,10 +330,25 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
               finalRank = teamStatus.playoff.status;
             }
             
-            if (teamStatus.playoff && teamStatus.playoff.record) {
-              const record = teamStatus.playoff.record;
-              finalRecord = `${record.wins}-${record.losses}-${record.ties}`;
+            // Initialize record totals
+            let wins = 0, losses = 0, ties = 0;
+            
+            // Add qualification record if available
+            if (teamStatus.qual && teamStatus.qual.ranking && teamStatus.qual.ranking.record) {
+              wins += teamStatus.qual.ranking.record.wins;
+              losses += teamStatus.qual.ranking.record.losses;
+              ties += teamStatus.qual.ranking.record.ties;
             }
+            
+            // Add playoff record if available
+            if (teamStatus.playoff && teamStatus.playoff.record) {
+              wins += teamStatus.playoff.record.wins;
+              losses += teamStatus.playoff.record.losses;
+              ties += teamStatus.playoff.record.ties;
+            }
+            
+            // Create combined record string
+            finalRecord = `${wins}-${losses}-${ties}`;
           }
           
           // Check team's division
@@ -363,9 +378,25 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
                   const ranking = divStatus.qual.ranking;
                   championshipRank = ranking.rank;
                   
+                  // Initialize the combined record
+                  let wins = 0, losses = 0, ties = 0;
+                  
+                  // Add qualification record if available
                   if (ranking.record) {
-                    championshipRecord = `${ranking.record.wins}-${ranking.record.losses}-${ranking.record.ties}`;
+                    wins += ranking.record.wins;
+                    losses += ranking.record.losses;
+                    ties += ranking.record.ties;
                   }
+                  
+                  // Add playoff record if available
+                  if (divStatus.playoff && divStatus.playoff.record) {
+                    wins += divStatus.playoff.record.wins;
+                    losses += divStatus.playoff.record.losses;
+                    ties += divStatus.playoff.record.ties;
+                  }
+                  
+                  // Create combined record string
+                  championshipRecord = `${wins}-${losses}-${ties}`;
                   
                   if (divStatus.qual.num_teams) {
                     divisionTotalTeams = divStatus.qual.num_teams;

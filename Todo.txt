@@ -1,1 +1,2 @@
 Add overall_status_str for teams that made it to the championship.
+Add alliance_status_str for teams in championship.
