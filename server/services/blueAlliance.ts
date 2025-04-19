@@ -3,7 +3,7 @@ import { storage } from "../storage";
 import { log } from "../vite";
 
 // Set cache duration in seconds
-const CACHE_DURATION = 86400; // 24 hours - Use longer cache for championship data which changes infrequently
+const CACHE_DURATION = 300; // 5 minutes
 
 // Helper to get data from API with caching
 export async function fetchFromApi(endpoint: string): Promise<any> {
@@ -88,18 +88,18 @@ export async function getEventRankings(eventKey: string) {
 export async function getChampionshipEvents(year: number) {
   const events = await getEvents(year);
   return events.filter((event: any) => 
-    event.event_type === 3 || event.event_type === 4 || event.event_type === 5 // Championship (3), Division (4) & Festival of Champions (5)
+    event.event_type === 3 || event.event_type === 4 || event.event_type === 5 // Division (3), Championship (4) & Festival of Champions (5)
   );
 }
 
-// Get championship main events (event_type=3) - these are the main championship events
-export async function getChampionshipFinals(year: number) {
+// Get championship division events (event_type=3) - these are the division events
+export async function getChampionshipDivisions(year: number) {
   const events = await getEvents(year);
   return events.filter((event: any) => event.event_type === 3);
 }
 
-// Get championship divisions (event_type=4) - these are the division events
-export async function getChampionshipDivisions(year: number) {
+// Get championship main events (event_type=4) - these are the main championship events
+export async function getChampionshipFinals(year: number) {
   const events = await getEvents(year);
   return events.filter((event: any) => event.event_type === 4);
 }
@@ -199,11 +199,11 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
     // Get all the year's events to identify championships and divisions
     const allEvents = await fetchFromApi(`/events/${year}`);
     
-    // CRITICAL: Championship events are event_type=3, division events are event_type=4
-    // According to TBA documentation: Championships=3, Divisions=4
+    // CRITICAL: Division events are event_type=3, championship events are event_type=4
+    // According to TBA documentation: Divisions=3, Championships=4
     // The qualification detection logic is correct with these event types
-    const championshipEvents = allEvents.filter((event: any) => event.event_type === 3);
-    const divisionEvents = allEvents.filter((event: any) => event.event_type === 4);
+    const divisionEvents = allEvents.filter((event: any) => event.event_type === 3);
+    const championshipEvents = allEvents.filter((event: any) => event.event_type === 4);
     
     // Add detailed logging of the events
     log(`Found ${championshipEvents.length} championship events and ${divisionEvents.length} division events for ${year}`, "blueAlliance");
