@@ -225,10 +225,47 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
     try {
       const rankData = await getEventRankings(eventKey);
       if (rankData && rankData.rankings) {
+        // First create a map of playoff records if available
+        const playoffRecords: Record<string, { wins: number, losses: number, ties: number }> = {};
+        
+        try {
+          // Try to fetch team statuses for this event to get playoff records
+          const eventTeamStatuses = await getEventTeamStatuses(eventKey);
+          
+          if (eventTeamStatuses) {
+            // Extract playoff records for each team
+            Object.entries(eventTeamStatuses).forEach(([teamKey, status]: [string, any]) => {
+              if (status && status.playoff && status.playoff.record) {
+                playoffRecords[teamKey] = {
+                  wins: status.playoff.record.wins,
+                  losses: status.playoff.record.losses,
+                  ties: status.playoff.record.ties
+                };
+              }
+            });
+          }
+        } catch (error) {
+          log(`Error fetching playoff records for event ${eventKey}: ${error}`, "blueAlliance");
+        }
+        
+        // Now combine qualification and playoff records for each team
         rankData.rankings.forEach((rank: any) => {
+          // Start with qualification record
+          let wins = rank.record.wins;
+          let losses = rank.record.losses;
+          let ties = rank.record.ties;
+          
+          // Add playoff record if available
+          if (playoffRecords[rank.team_key]) {
+            wins += playoffRecords[rank.team_key].wins;
+            losses += playoffRecords[rank.team_key].losses;
+            ties += playoffRecords[rank.team_key].ties;
+          }
+          
+          // Store the combined record
           rankings[rank.team_key] = {
             rank: rank.rank,
-            record: `${rank.record.wins}-${rank.record.losses}-${rank.record.ties}`,
+            record: `${wins}-${losses}-${ties}`,
             totalTeams: rankData.rankings.length
           };
         });
