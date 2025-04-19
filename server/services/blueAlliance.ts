@@ -343,25 +343,94 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
       let finalRank = null;
       let finalRecord = null;
       
-      // Check if team is in any championship
+      // First check if the team is in any division - being in a division means they qualified
+      let foundInDivision = false;
+      
+      // Scan all divisions first
+      for (const divEvent of divisionEvents) {
+        const divStatuses = divisionStatusesMap[divEvent.key] || {};
+        
+        // Check if team is in this division
+        if (divStatuses[teamKey]) {
+          // If team is in any division, they are qualified
+          isQualified = true;
+          foundInDivision = true;
+          divisionEventKey = divEvent.key;
+          division = getDivisionName(divEvent.key, divEvent.name);
+          
+          log(`Team ${teamKey} is in division ${division} (${divisionEventKey})`, "blueAlliance");
+          
+          // Find the corresponding championship event for this division
+          for (const champEvent of championshipEvents) {
+            const champYearPrefix = champEvent.key.substring(0, 4);
+            const divYearPrefix = divEvent.key.substring(0, 4);
+            
+            if (champYearPrefix === divYearPrefix) {
+              championshipEventKey = champEvent.key;
+              championshipLocation = champEvent.city || champEvent.name;
+              break;
+            }
+          }
+          
+          // Get ranking info from the division
+          const divStatus = divStatuses[teamKey];
+          if (divStatus.qual && divStatus.qual.ranking) {
+            const ranking = divStatus.qual.ranking;
+            championshipRank = ranking.rank;
+            
+            // Initialize the combined record
+            let wins = 0, losses = 0, ties = 0;
+            
+            // Add qualification record if available
+            if (ranking.record) {
+              wins += ranking.record.wins;
+              losses += ranking.record.losses;
+              ties += ranking.record.ties;
+            }
+            
+            // Add playoff record if available
+            if (divStatus.playoff && divStatus.playoff.record) {
+              wins += divStatus.playoff.record.wins;
+              losses += divStatus.playoff.record.losses;
+              ties += divStatus.playoff.record.ties;
+            }
+            
+            // Create combined record string
+            championshipRecord = `${wins}-${losses}-${ties}`;
+            
+            if (divStatus.qual.num_teams) {
+              divisionTotalTeams = divStatus.qual.num_teams;
+            }
+            
+            log(`Team ${teamKey} is ranked ${championshipRank} with record ${championshipRecord} in division ${division}`, "blueAlliance");
+          }
+          
+          // We found the division for this team, no need to check others
+          break;
+        }
+      }
+      
+      // Now check if the team is in any championship finals
       for (const champEvent of championshipEvents) {
-        championshipEventKey = champEvent.key;
-        const teamChampStatusMap = championshipStatusesMap[championshipEventKey] || {};
+        const champKey = champEvent.key;
+        const teamChampStatusMap = championshipStatusesMap[champKey] || {};
         
         // Check if this team has a status for this championship
         if (teamChampStatusMap[teamKey]) {
-          log(`Found team ${teamKey} status for championship ${championshipEventKey}`, "blueAlliance");
+          log(`Found team ${teamKey} status for championship ${champKey}`, "blueAlliance");
           
-          // If the team has a status, they're qualified
-          isQualified = true;
-          championshipLocation = champEvent.city || champEvent.name;
+          // Set the championship info if it's not already set from a division
+          if (!championshipEventKey) {
+            championshipEventKey = champKey;
+            championshipLocation = champEvent.city || champEvent.name;
+          }
           
           // Get championship status details
           const teamStatus = teamChampStatusMap[teamKey];
           
           // If team has alliance data, they're in the finals
           if (teamStatus.alliance) {
-            finalEventKey = championshipEventKey;
+            finalEventKey = champKey;
             
             if (teamStatus.playoff && teamStatus.playoff.status) {
               finalRank = teamStatus.playoff.status;
@@ -388,64 +457,9 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
             finalRecord = `${wins}-${losses}-${ties}`;
           }
           
-          // Check team's division
+          // If the team has an alliance status in the championship, log it
           if (teamStatus.alliance_status_str) {
             log(`Team ${teamKey} alliance status: ${teamStatus.alliance_status_str}`, "blueAlliance");
-          }
-          
-          // Find which division this team is in
-          for (const divEvent of divisionEvents) {
-            // Only check divisions for this championship
-            const divYearPrefix = divEvent.key.substring(0, 4);
-            const champYearPrefix = champEvent.key.substring(0, 4);
-            
-            if (divYearPrefix === champYearPrefix) {
-              const divStatuses = divisionStatusesMap[divEvent.key] || {};
-              
-              // Check if team is in this division
-              if (divStatuses[teamKey]) {
-                divisionEventKey = divEvent.key;
-                division = getDivisionName(divEvent.key, divEvent.name);
-                
-                log(`Team ${teamKey} is in division ${division} (${divisionEventKey})`, "blueAlliance");
-                
-                // Get ranking info from the division
-                const divStatus = divStatuses[teamKey];
-                if (divStatus.qual && divStatus.qual.ranking) {
-                  const ranking = divStatus.qual.ranking;
-                  championshipRank = ranking.rank;
-                  
-                  // Initialize the combined record
-                  let wins = 0, losses = 0, ties = 0;
-                  
-                  // Add qualification record if available
-                  if (ranking.record) {
-                    wins += ranking.record.wins;
-                    losses += ranking.record.losses;
-                    ties += ranking.record.ties;
-                  }
-                  
-                  // Add playoff record if available
-                  if (divStatus.playoff && divStatus.playoff.record) {
-                    wins += divStatus.playoff.record.wins;
-                    losses += divStatus.playoff.record.losses;
-                    ties += divStatus.playoff.record.ties;
-                  }
-                  
-                  // Create combined record string
-                  championshipRecord = `${wins}-${losses}-${ties}`;
-                  
-                  if (divStatus.qual.num_teams) {
-                    divisionTotalTeams = divStatus.qual.num_teams;
-                  }
-                  
-                  log(`Team ${teamKey} is ranked ${championshipRank} with record ${championshipRecord} in division ${division}`, "blueAlliance");
-                }
-                
-                // We found the division for this team, no need to check others
-                break;
-              }
-            }
           }
           
           // We found championship info for this team, no need to check others
