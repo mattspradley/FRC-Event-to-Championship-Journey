@@ -15,12 +15,14 @@ interface TeamDetailsModalProps {
   team: TeamWithStatus;
   isOpen: boolean;
   onClose: () => void;
+  eventYear?: number; // Optional event year for the team page link
 }
 
 const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
   team,
   isOpen,
   onClose,
+  eventYear,
 }) => {
   const status = getQualificationStatus(team);
   const statusColor = getStatusColor(status);
@@ -192,7 +194,7 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
             Close
           </Button>
           <Button 
-            onClick={() => window.open(`https://www.thebluealliance.com/team/${team.team.team_number}`, '_blank')}
+            onClick={() => window.open(`https://www.thebluealliance.com/team/${team.team.team_number}/${eventYear || new Date().getFullYear()}`, '_blank')}
           >
             View on The Blue Alliance
           </Button>
