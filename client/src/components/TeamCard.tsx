@@ -13,11 +13,11 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails }) => {
   const statusColor = getStatusColor(status);
   const statusText = getStatusText(status, team.waitlistPosition);
   
-  // Define better colors based on status
+  // Define better colors based on status - only affect the border, not the background
   const statusColorClasses: Record<string, string> = {
-    success: "border-green-500 bg-green-50",
-    warning: "border-yellow-500 bg-yellow-50",
-    destructive: "border-red-500 bg-red-50",
+    success: "border-green-500",
+    warning: "border-yellow-500",
+    destructive: "border-red-500",
     muted: "border-gray-300"
   };
   
