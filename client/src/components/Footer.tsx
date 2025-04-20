@@ -1,4 +1,5 @@
 import React from "react";
+import { VersionInfo } from "@/components/VersionInfo";
 
 const Footer: React.FC = () => {
   return (
@@ -6,9 +7,12 @@ const Footer: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="mb-4 md:mb-0">
-            <p className="text-sm">
-              FIRST Robotics Championship Tracker &copy; {new Date().getFullYear()}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm">
+                FIRST Robotics Championship Tracker &copy; {new Date().getFullYear()}
+              </p>
+              <VersionInfo compact className="text-neutral-400 hover:text-white" />
+            </div>
             <p className="text-xs text-neutral-400 mt-1">
               Not affiliated with FIRST Robotics Competition. Data provided by The Blue Alliance API.
             </p>

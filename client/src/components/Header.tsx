@@ -1,6 +1,7 @@
 import React from "react";
-import { Gamepad, Calendar, Award } from "lucide-react";
+import { Gamepad, Calendar, Award, Info } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { VersionInfo } from "@/components/VersionInfo";
 
 const Header: React.FC = () => {
   const [location] = useLocation();

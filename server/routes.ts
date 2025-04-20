@@ -14,6 +14,7 @@ import {
 } from "./services/blueAlliance";
 import { z } from "zod";
 import { log } from "./vite";
+import { VERSION } from "../shared/version";
 
 // Define new endpoint for this route
 const API_PREFIX = "/api";
@@ -340,6 +341,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       log(`Error in /team/${req.params.teamNumber}/achievements/${req.params.year}: ${error}`, "api");
       res.status(500).json({ 
         error: "Failed to fetch team achievements",
+        message: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  // Get version information
+  apiRouter.get("/version", async (req: Request, res: Response) => {
+    try {
+      // Get extra server info
+      const serverInfo = {
+        nodeVersion: process.version,
+        uptime: process.uptime(),
+        serverTime: new Date().toISOString(),
+      };
+      
+      // Return version info
+      res.json({
+        ...VERSION,
+        server: serverInfo
+      });
+    } catch (error) {
+      log(`Error in /version: ${error}`, "api");
+      res.status(500).json({ 
+        error: "Failed to get version information",
         message: error instanceof Error ? error.message : "Unknown error" 
       });
     }
