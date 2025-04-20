@@ -497,7 +497,7 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
       // Check for division event status strings
       if (isQualified && division) {
         const divEventKey = divisionEventKey;
-        const divStatusMap = championshipStatusesMap[divEventKey] || {};
+        const divStatusMap = divisionStatusesMap[divEventKey] || {};
         const divTeamStatus = divStatusMap[teamKey];
         
         if (divTeamStatus) {
