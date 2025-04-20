@@ -11,6 +11,7 @@ interface TeamsListProps {
   statusFilter: string;
   sortBy: string;
   searchQuery: string;
+  eventYear?: number; // Add optional event year parameter
 }
 
 const TeamsList: React.FC<TeamsListProps> = ({
@@ -19,6 +20,7 @@ const TeamsList: React.FC<TeamsListProps> = ({
   statusFilter,
   sortBy,
   searchQuery,
+  eventYear,
 }) => {
   const [selectedTeam, setSelectedTeam] = useState<TeamWithStatus | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -106,6 +108,7 @@ const TeamsList: React.FC<TeamsListProps> = ({
               key={team.team.key}
               team={team}
               onShowDetails={() => handleShowDetails(team)}
+              eventYear={eventYear}
             />
           ))
         ) : (

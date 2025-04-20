@@ -57,6 +57,7 @@ const Home: React.FC = () => {
               statusFilter={statusFilter}
               sortBy={sortBy}
               searchQuery={searchQuery}
+              eventYear={selectedEvent ? parseInt(selectedEvent.substring(0, 4)) : undefined}
             />
           </>
         )}
