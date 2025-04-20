@@ -176,29 +176,31 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
           </div>
         </div>
         
-        <DialogFooter className="mt-4 flex flex-wrap gap-2">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="mt-4 flex flex-col sm:flex-row gap-2">
+          <Button variant="outline" onClick={onClose} className="order-3 sm:order-1">
             Close
           </Button>
-          <Button 
-            variant="secondary"
-            className="flex items-center gap-1"
-            onClick={() => {
-              onClose();
-              const year = eventYear || new Date().getFullYear();
-              setLocation(`/team/${team.team.team_number}/${year}`);
-            }}
-          >
-            <Award className="h-4 w-4" />
-            View Team Storyboard
-          </Button>
-          <Button 
-            className="flex items-center gap-1"
-            onClick={() => window.open(`https://www.thebluealliance.com/team/${team.team.team_number}/${eventYear || new Date().getFullYear()}`, '_blank')}
-          >
-            <ExternalLink className="h-4 w-4" />
-            View on The Blue Alliance
-          </Button>
+          <div className="flex flex-row gap-2 w-full sm:w-auto order-1 sm:order-2">
+            <Button 
+              variant="secondary"
+              className="flex items-center gap-1 flex-1"
+              onClick={() => {
+                onClose();
+                const year = eventYear || new Date().getFullYear();
+                setLocation(`/team/${team.team.team_number}/${year}`);
+              }}
+            >
+              <Award className="h-4 w-4" />
+              View Storyboard
+            </Button>
+            <Button 
+              className="flex items-center gap-1 flex-1"
+              onClick={() => window.open(`https://www.thebluealliance.com/team/${team.team.team_number}/${eventYear || new Date().getFullYear()}`, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4" />
+              View on TBA
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
