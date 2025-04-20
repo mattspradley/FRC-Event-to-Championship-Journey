@@ -3,7 +3,7 @@ import { storage } from "../storage";
 import { log } from "../vite";
 
 // Set cache duration in seconds
-const CACHE_DURATION = 300; // 5 minutes
+const CACHE_DURATION = 14400; // 4 hours
 
 // Helper to get data from API with caching
 export async function fetchFromApi(endpoint: string): Promise<any> {
