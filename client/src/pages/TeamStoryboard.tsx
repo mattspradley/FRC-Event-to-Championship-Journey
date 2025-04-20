@@ -18,8 +18,9 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
-import { Calendar, ChevronRight, Medal, Award, Flag, Trophy, ArrowRight, Star } from "lucide-react";
+import { Calendar, ChevronRight, Medal, Award, Flag, Trophy, ArrowRight, Star, TrendingUp } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
 
 interface Achievement {
   event: {
@@ -141,6 +142,15 @@ const TeamStoryboard: React.FC = () => {
     if (percentile <= 0.75) return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"; // Top 75%
     return "bg-red-100 text-red-800 hover:bg-red-200"; // Bottom 25%
   };
+  
+  // Helper to get background color for percentile bar
+  const getPercentileColor = (rank: number, totalTeams: number) => {
+    const percentile = rank / totalTeams;
+    if (percentile <= 0.25) return "bg-green-500"; // Top 25%
+    if (percentile <= 0.5) return "bg-blue-500"; // Top 50%
+    if (percentile <= 0.75) return "bg-yellow-500"; // Top 75%
+    return "bg-red-500"; // Bottom 25%
+  };
 
   // Helper to get event type badge color
   const getEventTypeColor = (eventType: number) => {
@@ -246,6 +256,59 @@ const TeamStoryboard: React.FC = () => {
                       <span className="text-sm text-muted-foreground">Events</span>
                       <span className="font-medium">{teamData.achievements.length}</span>
                     </div>
+                    
+                    {/* Performance Trend */}
+                    {teamData.achievements.some(a => a.performance) && (
+                      <>
+                        <div className="pt-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">Performance Trend</span>
+                          </div>
+                          <ResponsiveContainer width="100%" height={60}>
+                            <LineChart
+                              data={teamData.achievements
+                                .filter(a => a.performance)
+                                .map((a, index) => ({
+                                  name: a.event.short_name || a.event.name,
+                                  rank: a.performance?.rank,
+                                  percentile: a.performance ? 
+                                    1 - (a.performance.rank / a.performance.totalTeams) : 0,
+                                  index
+                                }))}
+                            >
+                              <Tooltip 
+                                content={({ active, payload }) => {
+                                  if (active && payload && payload.length) {
+                                    return (
+                                      <div className="bg-background border border-border p-2 rounded-md shadow-sm text-xs">
+                                        <p className="font-medium">{payload[0].payload.name}</p>
+                                        <p>Rank: {payload[0].payload.rank}</p>
+                                        <p>Percentile: {Math.round(payload[0].payload.percentile * 100)}%</p>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              <Line 
+                                type="monotone"
+                                dataKey="percentile"
+                                stroke="#8884d8"
+                                strokeWidth={2}
+                                dot={true}
+                                activeDot={{ r: 4 }}
+                                isAnimationActive={true}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                            <span>First Event</span>
+                            <span>Latest Event</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter>
@@ -350,6 +413,24 @@ const TeamStoryboard: React.FC = () => {
                                     <Badge variant="outline">
                                       Record: {achievement.performance.record}
                                     </Badge>
+                                  </div>
+                                  
+                                  {/* Percentile visualization */}
+                                  <div className="mt-2">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs text-muted-foreground">Performance Percentile</span>
+                                      <span className="text-xs font-medium">
+                                        {Math.round((1 - (achievement.performance.rank / achievement.performance.totalTeams)) * 100)}%
+                                      </span>
+                                    </div>
+                                    <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                                      <div 
+                                        className={`h-full ${getPercentileColor(achievement.performance.rank, achievement.performance.totalTeams)}`}
+                                        style={{ 
+                                          width: `${Math.round((1 - (achievement.performance.rank / achievement.performance.totalTeams)) * 100)}%` 
+                                        }}
+                                      />
+                                    </div>
                                   </div>
                                 </div>
                               )}
