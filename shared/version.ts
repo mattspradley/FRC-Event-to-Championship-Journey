@@ -3,7 +3,23 @@
  * This file contains build and version information for the application.
  */
 
-export const VERSION = {
+export interface ServerInfo {
+  nodeVersion: string;
+  uptime: number;
+  serverTime: string;
+}
+
+export interface VersionResponse {
+  appVersion: string;
+  buildNumber: string;
+  commitHash: string;
+  environment: string;
+  buildDate: string;
+  releaseTag: string;
+  server?: ServerInfo;
+}
+
+export const VERSION: VersionResponse = {
   // Application version using semantic versioning (major.minor.patch)
   appVersion: '1.0.0',
   

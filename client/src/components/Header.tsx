@@ -17,7 +17,7 @@ const Header: React.FC = () => {
             </div>
           </Link>
         </div>
-        <div className="flex space-x-6">
+        <div className="flex items-center space-x-6">
           <Link href="/">
             <div className={`flex items-center gap-2 text-white hover:text-secondary transition-colors cursor-pointer ${location === '/' ? 'font-semibold border-b-2 border-white' : ''}`}>
               <Calendar className="h-5 w-5" />
@@ -30,6 +30,11 @@ const Header: React.FC = () => {
               <span className="hidden md:inline">Team Storyboard</span>
             </div>
           </Link>
+          <div className="hidden md:flex items-center ml-2">
+            <VersionInfo 
+              className="bg-white/10 border-white/20 hover:bg-white/20 text-white" 
+            />
+          </div>
         </div>
       </div>
     </header>

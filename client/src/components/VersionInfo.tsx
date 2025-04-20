@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Info, Copy, Check } from 'lucide-react';
+import { Info, Copy, Check, Server, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { VERSION, getDetailedVersionInfo } from '@shared/version';
 import { trackEvent } from '@/hooks/use-analytics';
+import { useVersionInfo } from '@/hooks/use-version-info';
 
 /**
  * A component that displays version information in the UI
@@ -28,20 +28,32 @@ export function VersionInfo({
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { versionInfo, isLoading, error, fromApi } = useVersionInfo();
 
   const copyVersionInfo = () => {
-    navigator.clipboard.writeText(getDetailedVersionInfo().trim());
+    // Create detailed version string
+    const detailedInfo = `
+    Version: ${versionInfo.appVersion}
+    Build: ${versionInfo.buildNumber}
+    Commit: ${versionInfo.commitHash}
+    Environment: ${versionInfo.environment}
+    Build Date: ${versionInfo.buildDate}
+    Release: ${versionInfo.releaseTag}
+    ${versionInfo.server ? `Server: ${versionInfo.server.nodeVersion} (Uptime: ${Math.floor(versionInfo.server.uptime / 3600)}h ${Math.floor((versionInfo.server.uptime % 3600) / 60)}m)` : ''}
+    `;
+    
+    navigator.clipboard.writeText(detailedInfo.trim());
     setCopied(true);
     
     // Track the copy action in analytics
-    trackEvent('Version', 'copy_version_details', VERSION.appVersion);
+    trackEvent('Version', 'copy_version_details', versionInfo.appVersion);
     
     setTimeout(() => setCopied(false), 2000);
   };
 
   // Track when version details are viewed
   const handleOpenDialog = () => {
-    trackEvent('Version', 'view_version_details', VERSION.appVersion);
+    trackEvent('Version', 'view_version_details', versionInfo.appVersion);
     setDialogOpen(true);
   };
 
@@ -51,7 +63,7 @@ export function VersionInfo({
         className={`text-xs text-muted-foreground hover:text-primary cursor-pointer ${className}`}
         onClick={handleOpenDialog}
       >
-        v{VERSION.appVersion}
+        v{versionInfo.appVersion}
       </span>
     );
   }
@@ -65,7 +77,7 @@ export function VersionInfo({
           onClick={handleOpenDialog}
         >
           <Info className="h-3 w-3 mr-1" />
-          v{VERSION.appVersion}
+          v{versionInfo.appVersion}
         </Badge>
       </DialogTrigger>
       <DialogContent>
@@ -79,40 +91,69 @@ export function VersionInfo({
         <div className="space-y-4 mt-2">
           <div className="flex justify-between items-center">
             <div className="font-semibold">Application Version</div>
-            <div>{VERSION.appVersion}</div>
+            <div>{versionInfo.appVersion}</div>
           </div>
           
           <div className="flex justify-between items-center">
             <div className="font-semibold">Build Number</div>
-            <div>{VERSION.buildNumber}</div>
+            <div>{versionInfo.buildNumber}</div>
           </div>
           
           <div className="flex justify-between items-center">
             <div className="font-semibold">Commit Hash</div>
-            <div className="font-mono text-xs">{VERSION.commitHash}</div>
+            <div className="font-mono text-xs">{versionInfo.commitHash}</div>
           </div>
           
           <Separator />
           
           <div className="flex justify-between items-center">
             <div className="font-semibold">Environment</div>
-            <Badge variant={VERSION.environment === 'production' ? 'default' : 'secondary'}>
-              {VERSION.environment}
+            <Badge variant={versionInfo.environment === 'production' ? 'default' : 'secondary'}>
+              {versionInfo.environment}
             </Badge>
           </div>
           
           <div className="flex justify-between items-center">
             <div className="font-semibold">Release Tag</div>
-            <div>{VERSION.releaseTag}</div>
+            <div>{versionInfo.releaseTag}</div>
           </div>
           
           <div className="flex justify-between items-center">
             <div className="font-semibold">Build Date</div>
-            <div>{VERSION.buildDate}</div>
+            <div>{versionInfo.buildDate}</div>
           </div>
+          
+          {fromApi && versionInfo.server && (
+            <>
+              <Separator />
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-1 font-semibold">
+                  <Server className="h-4 w-4" />
+                  <span>Server Information</span>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center pl-5">
+                <div className="text-sm text-muted-foreground">Node Version</div>
+                <div className="text-sm font-mono">{versionInfo.server.nodeVersion}</div>
+              </div>
+              
+              <div className="flex justify-between items-center pl-5">
+                <div className="text-sm text-muted-foreground">Server Uptime</div>
+                <div className="text-sm">
+                  {Math.floor(versionInfo.server.uptime / 3600)}h {Math.floor((versionInfo.server.uptime % 3600) / 60)}m
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        <DialogFooter className="mt-4">
+        <DialogFooter className="mt-4 flex justify-between">
+          <Badge variant="outline" className="gap-1">
+            <Globe className="h-4 w-4" /> 
+            {fromApi ? 'API data' : 'Local data'}
+          </Badge>
+          
           <Button 
             variant="outline" 
             size="sm" 
