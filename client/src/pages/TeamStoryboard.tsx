@@ -505,11 +505,6 @@ const TeamStoryboard: React.FC = () => {
               <div className="bg-muted p-8 rounded-lg text-center">
                 <h3 className="text-xl font-medium mb-2">No Team Selected</h3>
                 <p className="text-muted-foreground mb-6">Enter a team number and year to view their season journey and achievements.</p>
-                <img 
-                  src="https://www.thebluealliance.com/images/first_logo.svg" 
-                  alt="FIRST Logo" 
-                  className="max-w-[200px] mx-auto opacity-30"
-                />
               </div>
             )}
           </div>
