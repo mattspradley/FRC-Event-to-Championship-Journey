@@ -19,24 +19,33 @@ export interface VersionResponse {
   server?: ServerInfo;
 }
 
+// Simple version information with hardcoded defaults for client-side
+// These values will be updated by the deploy.sh script during deployment
+
+// Get the current date in YYYYMMDD format for default build number
+const getFormattedDate = (): string => {
+  return new Date().toISOString().slice(0, 10).replace(/-/g, '');
+};
+
+// Define version object with static values that will be replaced during build
 export const VERSION: VersionResponse = {
-  // Application version using semantic versioning (major.minor.patch)
+  // Application version using semantic versioning (major.minor.patch) - updated by deploy script
   appVersion: '1.0.0',
   
-  // Build number - increment this with each production build
-  buildNumber: '20240420.1',
+  // Build number - updated by deploy script
+  buildNumber: '20250420.1',
   
-  // Commit hash - should be updated to match the actual git commit hash during deployment
-  commitHash: 'a1b2c3d', 
+  // Commit hash - updated by deploy script
+  commitHash: 'development', 
   
-  // Environment (development, staging, production)
-  environment: process.env.NODE_ENV || 'development',
+  // Environment - updated by deploy script
+  environment: 'development',
   
-  // Build timestamp
-  buildDate: '2024-04-20',
+  // Build timestamp - updated by deploy script
+  buildDate: '2025-04-20',
   
-  // Release name/tag
-  releaseTag: 'houston-2024',
+  // Release tag - updated by deploy script
+  releaseTag: 'current',
 };
 
 /**
