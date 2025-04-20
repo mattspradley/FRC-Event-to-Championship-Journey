@@ -8,6 +8,7 @@ import { X, RefreshCw, Search } from "lucide-react";
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { Event, TeamWithStatus, fetchYears, searchEvents, fetchEventTeams } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { trackEvent } from "@/hooks/use-analytics";
 
 interface EventSelectorProps {
   onEventSelect: (eventKey: string, eventName: string) => void;
@@ -101,17 +102,23 @@ const EventSelector: React.FC<EventSelectorProps> = ({
   };
 
   const handleEventSelect = (event: Event) => {
+    // Track event selection in Google Analytics
+    trackEvent('Event Selection', 'select_event', `${event.key} - ${event.name}`, event.year);
     onEventSelect(event.key, event.name);
     setIsSearchOpen(false);
     setSearchQuery("");
   };
 
   const handleClearEvent = () => {
+    // Track clearing selected event
+    trackEvent('Event Selection', 'clear_event', selectedEventName || 'Unknown Event');
     onEventSelect("", "");
   };
 
   const handleLoadTeams = () => {
     if (selectedEvent) {
+      // Track team loading
+      trackEvent('Data Loading', 'load_teams', `${selectedEvent} - ${selectedEventName}`);
       refetchTeams();
     }
   };

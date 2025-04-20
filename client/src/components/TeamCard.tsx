@@ -2,6 +2,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, BarChart3 } from "lucide-react";
 import { TeamWithStatus, getQualificationStatus, getStatusColor, getStatusText } from "@/lib/api";
+import { trackEvent } from "@/hooks/use-analytics";
 
 interface TeamCardProps {
   team: TeamWithStatus;
@@ -139,14 +140,32 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails, eventYear }) =
       <div className="bg-muted p-3 flex justify-between">
         <button 
           className="text-primary hover:text-primary-dark text-sm font-medium focus:outline-none flex items-center"
-          onClick={() => window.open(`https://www.thebluealliance.com/team/${team.team.team_number}/${eventYear || new Date().getFullYear()}`)}
+          onClick={() => {
+            // Track external TBA link click from card
+            trackEvent(
+              'External Link', 
+              'view_team_season_on_tba', 
+              `Team ${team.team.team_number}`,
+              team.team.team_number
+            );
+            window.open(`https://www.thebluealliance.com/team/${team.team.team_number}/${eventYear || new Date().getFullYear()}`);
+          }}
         >
           <Calendar className="h-4 w-4 mr-1" />
           Team Season
         </button>
         <button 
           className="text-primary hover:text-primary-dark text-sm font-medium focus:outline-none flex items-center"
-          onClick={onShowDetails}
+          onClick={() => {
+            // Track team details view from card
+            trackEvent(
+              'Team Card', 
+              'open_team_details', 
+              `Team ${team.team.team_number}`,
+              team.team.team_number
+            );
+            onShowDetails();
+          }}
         >
           <BarChart3 className="h-4 w-4 mr-1" />
           Team Details

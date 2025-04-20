@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useLocation } from "wouter";
 import {
   Dialog,
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TeamWithStatus, getQualificationStatus, getStatusColor, getStatusText } from "@/lib/api";
 import { Award, ExternalLink } from "lucide-react";
+import { trackEvent } from "@/hooks/use-analytics";
 
 interface TeamDetailsModalProps {
   team: TeamWithStatus;
@@ -32,6 +33,18 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
   const statusColor = getStatusColor(status);
   const statusText = getStatusText(status, team.waitlistPosition);
   const [, setLocation] = useLocation();
+  
+  // Track when modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      trackEvent(
+        'Team Details', 
+        'view_team_details', 
+        `Team ${team.team.team_number} (${team.team.nickname || team.team.name})`,
+        team.team.team_number
+      );
+    }
+  }, [isOpen, team]);
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -185,6 +198,13 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
               variant="secondary"
               className="flex items-center gap-1 flex-1"
               onClick={() => {
+                // Track storyboard view
+                trackEvent(
+                  'Navigation', 
+                  'view_team_storyboard', 
+                  `Team ${team.team.team_number}`,
+                  team.team.team_number
+                );
                 onClose();
                 const year = eventYear || new Date().getFullYear();
                 setLocation(`/team/${team.team.team_number}/${year}`);
@@ -195,7 +215,16 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
             </Button>
             <Button 
               className="flex items-center gap-1 flex-1"
-              onClick={() => window.open(`https://www.thebluealliance.com/team/${team.team.team_number}/${eventYear || new Date().getFullYear()}`, '_blank')}
+              onClick={() => {
+                // Track external TBA link click
+                trackEvent(
+                  'External Link', 
+                  'view_team_on_tba', 
+                  `Team ${team.team.team_number}`,
+                  team.team.team_number
+                );
+                window.open(`https://www.thebluealliance.com/team/${team.team.team_number}/${eventYear || new Date().getFullYear()}`, '_blank');
+              }}
             >
               <ExternalLink className="h-4 w-4" />
               View on TBA
