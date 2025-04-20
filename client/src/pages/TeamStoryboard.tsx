@@ -80,14 +80,18 @@ const TeamStoryboard: React.FC = () => {
       });
   }, [match]);
 
+  // Track if we've already loaded data to prevent infinite loops
+  const [dataLoaded, setDataLoaded] = React.useState<boolean>(false);
+  
   // Load team data if we have a team number and year in the URL
   useEffect(() => {
-    if (match && params.teamNumber && params.year) {
-      loadTeamData(params.teamNumber, params.year);
+    if (match && params.teamNumber && params.year && !dataLoaded) {
+      setDataLoaded(true);
+      loadTeamData(params.teamNumber, params.year, false);
     }
-  }, [match, params]);
+  }, [match, params, dataLoaded]);
 
-  const loadTeamData = async (teamNum: string, yearStr: string) => {
+  const loadTeamData = async (teamNum: string, yearStr: string, updateURL: boolean = true) => {
     setIsLoading(true);
     setError(null);
 
@@ -95,8 +99,10 @@ const TeamStoryboard: React.FC = () => {
       const data: TeamData = await apiRequest(`/api/team/${teamNum}/achievements/${yearStr}`);
       setTeamData(data);
       
-      // Update the URL to reflect the loaded team data
-      setLocation(`/team/${teamNum}/${yearStr}`, { replace: true });
+      // Only update URL if requested (for form submissions, not for URL-triggered loads)
+      if (updateURL) {
+        setLocation(`/team/${teamNum}/${yearStr}`, { replace: true });
+      }
     } catch (err) {
       console.error("Error loading team data:", err);
       setError("Failed to load team data. Please check the team number and try again.");

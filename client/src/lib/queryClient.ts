@@ -16,25 +16,23 @@ export async function apiRequest<T = any>(
   let url = "";
   let payload: unknown | undefined = undefined;
   
-  // Handle the various parameter combinations
-  if (arguments.length === 1) {
+  // Handle the various parameter combinations based on parameter types
+  if (!urlOrPathOrData) {
     // Single parameter: GET request to the provided URL
     url = urlOrPathOrMethod;
-  } else if (arguments.length === 2) {
-    if (typeof urlOrPathOrData === "string") {
-      // Two string parameters: First is method, second is URL
-      method = urlOrPathOrMethod;
-      url = urlOrPathOrData as string;
-    } else {
-      // String + data: GET request to URL with data
-      url = urlOrPathOrMethod;
-      payload = urlOrPathOrData;
-    }
-  } else if (arguments.length === 3) {
+  } else if (typeof urlOrPathOrData === "string" && !data) {
+    // Two string parameters: First is method, second is URL
+    method = urlOrPathOrMethod;
+    url = urlOrPathOrData;
+  } else if (typeof urlOrPathOrData === "string" && data) {
     // Three parameters: method, URL, and data
     method = urlOrPathOrMethod;
-    url = urlOrPathOrData as string;
+    url = urlOrPathOrData;
     payload = data;
+  } else {
+    // String + data: GET request to URL with data
+    url = urlOrPathOrMethod;
+    payload = urlOrPathOrData;
   }
 
   const res = await fetch(url, {
