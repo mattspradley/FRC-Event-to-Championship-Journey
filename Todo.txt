@@ -2,4 +2,3 @@ Add overall_status_str for teams that made it to the championship and finals
 Add alliance_status_str for teams in championship.
 Make team link in card go to year selected
 Change Match Schedule button to Team Season and go to year
-Get rid of # in waitlist button

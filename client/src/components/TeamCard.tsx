@@ -6,9 +6,10 @@ import { TeamWithStatus, getQualificationStatus, getStatusColor, getStatusText }
 interface TeamCardProps {
   team: TeamWithStatus;
   onShowDetails: () => void;
+  eventYear?: number; // Optional event year for the team page link
 }
 
-const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails }) => {
+const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails, eventYear }) => {
   const status = getQualificationStatus(team);
   const statusColor = getStatusColor(status);
   const statusText = getStatusText(status, team.waitlistPosition);
@@ -138,10 +139,10 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails }) => {
       <div className="bg-muted p-3 flex justify-between">
         <button 
           className="text-primary hover:text-primary-dark text-sm font-medium focus:outline-none flex items-center"
-          onClick={() => window.open(`https://www.thebluealliance.com/team/${team.team.team_number}`)}
+          onClick={() => window.open(`https://www.thebluealliance.com/team/${team.team.team_number}/${eventYear || new Date().getFullYear()}`)}
         >
           <Calendar className="h-4 w-4 mr-1" />
-          Match Schedule
+          Team Season
         </button>
         <button 
           className="text-primary hover:text-primary-dark text-sm font-medium focus:outline-none flex items-center"
