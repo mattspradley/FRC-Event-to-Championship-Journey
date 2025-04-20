@@ -29,23 +29,23 @@ const getFormattedDate = (): string => {
 
 // Define version object with static values that will be replaced during build
 export const VERSION: VersionResponse = {
-  // Application version using semantic versioning (major.minor.patch) - updated by deploy script
-  appVersion: '1.0.2',
+  // Application version using semantic versioning (major.minor.patch)
+  appVersion: "1.0.0",
   
-  // Build number - updated by deploy script
-  buildNumber: '20250420.2',
+  // Build number in format YYYYMMDD.n
+  buildNumber: "20250420.1",
   
-  // Commit hash - updated by deploy script
-  commitHash: 'development', 
+  // Commit hash from git
+  commitHash: "development", 
   
-  // Environment - updated by deploy script
-  environment: 'development',
+  // Environment (development, staging, production)
+  environment: "development",
   
-  // Build timestamp - updated by deploy script
-  buildDate: '2025-04-20',
+  // Build timestamp
+  buildDate: "2025-04-20",
   
-  // Release tag - updated by deploy script
-  releaseTag: 'current',
+  // Release tag
+  releaseTag: "current"
 };
 
 /**

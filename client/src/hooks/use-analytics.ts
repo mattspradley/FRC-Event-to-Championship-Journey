@@ -10,7 +10,7 @@ interface Window {
 }
 
 // Analytics ID is hardcoded in index.html
-const ANALYTICS_ID = 'G-TLKVNR6KVB';
+const ANALYTICS_ID = 'G-NXRCBSBYE3';
 
 // Track a page view
 export const trackPageView = (path: string) => {
