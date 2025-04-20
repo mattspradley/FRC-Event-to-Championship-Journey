@@ -30,13 +30,13 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails, eventYear }) =
   };
   
   return (
-    <div className={`bg-white rounded-lg shadow-md overflow-hidden border-t-4 ${
+    <div className={`bg-white rounded-lg shadow-md overflow-hidden border-t-4 flex flex-col h-full ${
         statusColor === "success" ? statusColorClasses.success :
         statusColor === "warning" ? statusColorClasses.warning :
         statusColor === "destructive" ? statusColorClasses.destructive :
         statusColorClasses.muted
       }`}>
-      <div className="p-4">
+      <div className="p-4 flex-grow">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-mono text-xl font-medium">Team {team.team.team_number}</h3>
           <Badge 
