@@ -37,7 +37,6 @@ Version information can be viewed by clicking the version indicator in the heade
 The application requires the following environment variables:
 
 - `TBA_API_KEY`: API key for The Blue Alliance API
-- `GOOGLE_ANALYTICS_ID`: (Optional) Google Analytics tracking ID
 
 ## Development
 
