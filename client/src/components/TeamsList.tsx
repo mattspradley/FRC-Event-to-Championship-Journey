@@ -127,6 +127,7 @@ const TeamsList: React.FC<TeamsListProps> = ({
           team={selectedTeam}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          eventYear={eventYear}
         />
       )}
     </div>

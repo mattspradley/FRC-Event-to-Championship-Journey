@@ -62,6 +62,9 @@ export interface TeamWithStatus {
   rank?: number;
   record?: string;
   totalTeams?: number;
+  // Status messages
+  overall_status_str?: string;
+  alliance_status_str?: string;
 }
 
 export type QualificationStatus = "qualified" | "waitlist" | "not-qualified" | "unknown";

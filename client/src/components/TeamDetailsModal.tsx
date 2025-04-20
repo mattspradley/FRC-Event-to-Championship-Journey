@@ -98,6 +98,14 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
                           {team.championshipRecord || "Not Yet Available"}
                         </span>
                       </div>
+                      {team.overall_status_str && (
+                        <div className="col-span-2">
+                          <span className="text-green-800">Overall Status:</span>
+                          <span className="font-medium ml-1 text-green-900">
+                            {team.overall_status_str}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
@@ -127,6 +135,14 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
                           {team.finalEventKey}
                         </span>
                       </div>
+                      {team.alliance_status_str && (
+                        <div className="col-span-2">
+                          <span className="text-green-800">Alliance Status:</span>
+                          <span className="font-medium ml-1 text-green-900">
+                            {team.alliance_status_str}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </>
                 )}

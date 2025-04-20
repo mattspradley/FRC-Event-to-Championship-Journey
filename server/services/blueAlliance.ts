@@ -490,6 +490,47 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
         }
       }
       
+      // Capture the status strings
+      let overall_status_str = null;
+      let alliance_status_str = null;
+      
+      // Check for division event status strings
+      if (isQualified && division) {
+        const divEventKey = divisionEventKey;
+        const divStatusMap = championshipStatusesMap[divEventKey] || {};
+        const divTeamStatus = divStatusMap[teamKey];
+        
+        if (divTeamStatus) {
+          if (divTeamStatus.overall_status_str) {
+            overall_status_str = divTeamStatus.overall_status_str;
+            log(`Team ${teamKey} overall status: ${overall_status_str}`, "blueAlliance");
+          }
+          
+          if (divTeamStatus.alliance_status_str) {
+            alliance_status_str = divTeamStatus.alliance_status_str;
+            log(`Team ${teamKey} alliance status (div): ${alliance_status_str}`, "blueAlliance");
+          }
+        }
+      }
+      
+      // Check for finals event status strings (these should take precedence)
+      if (finalEventKey) {
+        const finalsStatusMap = championshipStatusesMap[finalEventKey] || {};
+        const finalsTeamStatus = finalsStatusMap[teamKey];
+        
+        if (finalsTeamStatus) {
+          if (finalsTeamStatus.overall_status_str) {
+            overall_status_str = finalsTeamStatus.overall_status_str;
+            log(`Team ${teamKey} finals overall status: ${overall_status_str}`, "blueAlliance");
+          }
+          
+          if (finalsTeamStatus.alliance_status_str) {
+            alliance_status_str = finalsTeamStatus.alliance_status_str;
+            log(`Team ${teamKey} finals alliance status: ${alliance_status_str}`, "blueAlliance");
+          }
+        }
+      }
+      
       // Return the complete status object
       return {
         team,
@@ -510,7 +551,10 @@ export async function getTeamChampionshipStatus(eventKey: string, year: number) 
         // Current event data
         rank: rankInfo.rank,
         record: rankInfo.record,
-        totalTeams: rankInfo.totalTeams
+        totalTeams: rankInfo.totalTeams,
+        // Status strings
+        overall_status_str,
+        alliance_status_str
       };
     });
     
