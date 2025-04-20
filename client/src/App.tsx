@@ -5,11 +5,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
+import TeamStoryboard from "@/pages/TeamStoryboard";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/team/:teamNumber/:year" component={TeamStoryboard} />
+      <Route path="/team" component={TeamStoryboard} />
       <Route component={NotFound} />
     </Switch>
   );
