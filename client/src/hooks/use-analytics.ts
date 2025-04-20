@@ -1,21 +1,48 @@
 /**
- * Placeholder hook for analytics tracking
- * Google Analytics integration has been removed
+ * Custom hook for Google Analytics tracking
  */
 
-// Track a page view (no-op function)
+// Define the gtag function type
+interface Window {
+  gtag?: (command: string, action: string, params?: any) => void;
+  dataLayer?: any[];
+}
+
+// Track a page view
 export const trackPageView = (path: string) => {
-  // Analytics tracking disabled
+  try {
+    const gtag = (window as any).gtag;
+    if (gtag && import.meta.env.VITE_GOOGLE_ANALYTICS_ID) {
+      gtag('config', import.meta.env.VITE_GOOGLE_ANALYTICS_ID, {
+        page_path: path,
+      });
+      console.log('Page view tracked:', path);
+    }
+  } catch (error) {
+    console.error('Error tracking page view:', error);
+  }
 };
 
-// Track an event (no-op function)
+// Track an event
 export const trackEvent = (
   category: string,
   action: string,
   label?: string,
   value?: number
 ) => {
-  // Analytics tracking disabled
+  try {
+    const gtag = (window as any).gtag;
+    if (gtag && import.meta.env.VITE_GOOGLE_ANALYTICS_ID) {
+      gtag('event', action, {
+        event_category: category,
+        event_label: label,
+        value: value,
+      });
+      console.log('Event tracked:', { category, action, label, value });
+    }
+  } catch (error) {
+    console.error('Error tracking event:', error);
+  }
 };
 
 // Hook to use analytics in components
