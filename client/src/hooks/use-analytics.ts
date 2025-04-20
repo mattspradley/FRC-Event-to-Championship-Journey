@@ -12,10 +12,11 @@ interface Window {
 export const trackPageView = (path: string) => {
   try {
     const gtag = (window as any).gtag;
-    if (gtag && import.meta.env.GOOGLE_ANALYTICS_ID) {
-      gtag('config', import.meta.env.GOOGLE_ANALYTICS_ID, {
+    if (gtag && import.meta.env.VITE_GOOGLE_ANALYTICS_ID) {
+      gtag('config', import.meta.env.VITE_GOOGLE_ANALYTICS_ID, {
         page_path: path,
       });
+      console.log('Page view tracked:', path);
     }
   } catch (error) {
     console.error('Error tracking page view:', error);
@@ -31,12 +32,13 @@ export const trackEvent = (
 ) => {
   try {
     const gtag = (window as any).gtag;
-    if (gtag && import.meta.env.GOOGLE_ANALYTICS_ID) {
+    if (gtag && import.meta.env.VITE_GOOGLE_ANALYTICS_ID) {
       gtag('event', action, {
         event_category: category,
         event_label: label,
         value: value,
       });
+      console.log('Event tracked:', { category, action, label, value });
     }
   } catch (error) {
     console.error('Error tracking event:', error);

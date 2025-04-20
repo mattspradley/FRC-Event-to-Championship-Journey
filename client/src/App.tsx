@@ -10,6 +10,13 @@ import { useEffect } from "react";
 import { trackPageView } from "@/hooks/use-analytics";
 
 function Router() {
+  const [location] = useLocation();
+  
+  // Track page views when location changes
+  useEffect(() => {
+    trackPageView(location);
+  }, [location]);
+
   return (
     <Switch>
       <Route path="/" component={Home} />
