@@ -24,28 +24,28 @@ export interface VersionResponse {
 
 // Get the current date in YYYYMMDD format for default build number
 const getFormattedDate = (): string => {
-  return new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  return new Date().toISOString().slice(0, 10).replace(/-/g, "");
 };
 
 // Define version object with static values that will be replaced during build
 export const VERSION: VersionResponse = {
-  // Application version using semantic versioning (major.minor.patch)
-  appVersion: "1.0.0",
-  
-  // Build number in format YYYYMMDD.n
-  buildNumber: "20250420.1",
-  
-  // Commit hash from git
-  commitHash: "development", 
-  
-  // Environment (development, staging, production)
+  // Application version using semantic versioning (major.minor.patch) - updated by deploy script
+  appVersion: "1.0.4",
+
+  // Build number - updated by deploy script
+  buildNumber: "20250420.4",
+
+  // Commit hash - updated by deploy script
+  commitHash: "development",
+
+  // Environment - updated by deploy script
   environment: "development",
-  
-  // Build timestamp
+
+  // Build timestamp - updated by deploy script
   buildDate: "2025-04-20",
-  
-  // Release tag
-  releaseTag: "current"
+
+  // Release tag - updated by deploy script
+  releaseTag: "current",
 };
 
 /**

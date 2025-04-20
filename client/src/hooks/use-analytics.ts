@@ -1,6 +1,6 @@
 /**
  * Custom hook for Google Analytics tracking
- * Google Analytics script is loaded in index.html with measurement ID G-TLKVNR6KVB
+ * Google Analytics script is loaded in index.html with measurement ID G-NXRCBSBYE3
  */
 
 // Declare gtag function for TypeScript
