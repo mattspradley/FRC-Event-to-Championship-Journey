@@ -79,6 +79,16 @@ export async function getEventTeamStatuses(eventKey: string) {
   return fetchFromApi(`/event/${eventKey}/teams/statuses`);
 }
 
+// Get all events for a team in a specific year
+export async function getTeamEvents(teamKey: string, year: number) {
+  return fetchFromApi(`/team/${teamKey}/events/${year}`);
+}
+
+// Get a team's awards at a specific event
+export async function getTeamEventAwards(teamKey: string, eventKey: string) {
+  return fetchFromApi(`/team/${teamKey}/event/${eventKey}/awards`);
+}
+
 // Get event rankings
 export async function getEventRankings(eventKey: string) {
   return fetchFromApi(`/event/${eventKey}/rankings`);

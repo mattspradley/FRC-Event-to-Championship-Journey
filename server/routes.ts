@@ -5,7 +5,12 @@ import {
   getEvents, 
   getEvent, 
   getEventTeams, 
-  getTeamChampionshipStatus 
+  getTeamChampionshipStatus,
+  getTeamEvents,
+  getTeamEventStatus,
+  getTeamEventAwards,
+  getEventRankings,
+  fetchFromApi
 } from "./services/blueAlliance";
 import { z } from "zod";
 import { log } from "./vite";
@@ -191,6 +196,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get a team's events for a specific year (for the storyboard feature)
+  apiRouter.get("/team/:teamNumber/events/:year", async (req: Request, res: Response) => {
+    try {
+      const { teamNumber, year } = req.params;
+      const teamKey = `frc${teamNumber}`;
+      const events = await getTeamEvents(teamKey, parseInt(year));
+      
+      // Sort events by start date
+      const sortedEvents = events
+        .filter((event: any) => event.name && event.start_date) // Filter out events with missing data
+        .sort((a: any, b: any) => {
+          const dateA = new Date(a.start_date);
+          const dateB = new Date(b.start_date);
+          return dateA.getTime() - dateB.getTime();
+        });
+      
+      res.json(sortedEvents);
+    } catch (error) {
+      log(`Error in /team/${req.params.teamNumber}/events/${req.params.year}: ${error}`, "api");
+      res.status(500).json({ 
+        error: "Failed to fetch team events",
+        message: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+  
+  // Get a team's achievements across events for a year (performance, awards, qualification status)
+  apiRouter.get("/team/:teamNumber/achievements/:year", async (req: Request, res: Response) => {
+    try {
+      const { teamNumber, year } = req.params;
+      const teamKey = `frc${teamNumber}`;
+      const yearNum = parseInt(year);
+      
+      // Get all events the team participated in during the year
+      const events = await getTeamEvents(teamKey, yearNum);
+      
+      // Sort events by start date
+      const sortedEvents = events
+        .filter((event: any) => event.name && event.start_date) // Filter out events with missing data
+        .sort((a: any, b: any) => {
+          const dateA = new Date(a.start_date);
+          const dateB = new Date(b.start_date);
+          return dateA.getTime() - dateB.getTime();
+        });
+      
+      // For each event, get the team's performance and achievements
+      const achievements = await Promise.all(
+        sortedEvents.map(async (event: any) => {
+          try {
+            // Get the team's status at this event
+            const teamStatus = await getTeamEventStatus(teamKey, event.key);
+            
+            // Get event rankings to find the team's rank
+            let rankData = null;
+            try {
+              const rankings = await getEventRankings(event.key);
+              if (rankings && rankings.rankings) {
+                const teamRanking = rankings.rankings.find((r: any) => r.team_key === teamKey);
+                if (teamRanking) {
+                  rankData = {
+                    rank: teamRanking.rank,
+                    totalTeams: rankings.rankings.length,
+                    record: `${teamRanking.record.wins}-${teamRanking.record.losses}-${teamRanking.record.ties}`
+                  };
+                }
+              }
+            } catch (rankError) {
+              log(`Error fetching rankings for event ${event.key}: ${rankError}`, "api");
+            }
+            
+            // Get team's awards at this event
+            let awards = [];
+            try {
+              awards = await getTeamEventAwards(teamKey, event.key);
+            } catch (awardsError) {
+              log(`Error fetching awards for team ${teamKey} at event ${event.key}: ${awardsError}`, "api");
+            }
+            
+            // Process alliance status and overall status strings for better display
+            let allianceStatusHtml = '';
+            let overallStatusHtml = '';
+            
+            if (teamStatus) {
+              if (teamStatus.alliance_status_str) {
+                allianceStatusHtml = teamStatus.alliance_status_str;
+              }
+              
+              if (teamStatus.overall_status_str) {
+                overallStatusHtml = teamStatus.overall_status_str;
+              }
+            }
+            
+            return {
+              event: {
+                key: event.key,
+                name: event.name,
+                short_name: event.short_name,
+                startDate: event.start_date,
+                endDate: event.end_date,
+                eventType: event.event_type,
+                eventTypeString: event.event_type_string,
+                city: event.city,
+                stateProv: event.state_prov,
+                country: event.country
+              },
+              performance: rankData,
+              status: teamStatus,
+              awards: awards,
+              allianceStatusHtml,
+              overallStatusHtml
+            };
+          } catch (eventError) {
+            log(`Error processing event ${event.key} for team ${teamKey}: ${eventError}`, "api");
+            return {
+              event: {
+                key: event.key,
+                name: event.name,
+                startDate: event.start_date,
+                endDate: event.end_date,
+                eventType: event.event_type,
+                eventTypeString: event.event_type_string
+              },
+              error: `Error processing event: ${eventError}`
+            };
+          }
+        })
+      );
+      
+      // Get the team's info
+      const teamData = await fetchFromApi(`/team/${teamKey}`);
+      
+      res.json({
+        teamKey,
+        teamNumber: parseInt(teamNumber),
+        teamName: teamData.name,
+        teamNickname: teamData.nickname,
+        rookieYear: teamData.rookie_year,
+        year: yearNum,
+        achievements
+      });
+    } catch (error) {
+      log(`Error in /team/${req.params.teamNumber}/achievements/${req.params.year}: ${error}`, "api");
+      res.status(500).json({ 
+        error: "Failed to fetch team achievements",
+        message: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
   // Register the router with the API prefix
   app.use(API_PREFIX, apiRouter);
 
