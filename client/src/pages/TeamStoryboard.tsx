@@ -399,8 +399,8 @@ const TeamStoryboard: React.FC = () => {
                         
                         {/* Key milestone indicators */}
                         {achievement.awards && achievement.awards.length > 0 && achievement.awards.some(a => a.name.toLowerCase().includes('winner')) && (
-                          <div className="absolute -right-4 top-4">
-                            <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                          <div className="absolute -right-4 top-16">
+                            <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 shadow-sm">
                               <Trophy className="h-3 w-3 mr-1" /> Winner
                             </Badge>
                           </div>
