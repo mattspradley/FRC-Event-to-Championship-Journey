@@ -73,7 +73,7 @@ const StatusDashboard: React.FC<StatusDashboardProps> = ({ teams, isLoading }) =
             <h3 className="text-sm text-muted-foreground">Qualified Teams</h3>
             <p className="text-2xl font-medium">{stats.qualified}</p>
           </div>
-          <div className="bg-warning/10 rounded-lg p-3 border-l-4 border-warning">
+          <div className="bg-yellow-100 rounded-lg p-3 border-l-4 border-yellow-500">
             <h3 className="text-sm text-muted-foreground">Waiting List</h3>
             <p className="text-2xl font-medium">{stats.waitlist}</p>
           </div>
