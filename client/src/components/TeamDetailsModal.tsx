@@ -130,12 +130,7 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
                           </span>
                         </div>
                       )}
-                      <div>
-                        <span className="text-green-800">Championship Key:</span>
-                        <span className="font-medium ml-1 text-green-900">
-                          {team.finalEventKey}
-                        </span>
-                      </div>
+
                     </>
                   )}
                   <div className="col-span-2">
@@ -177,33 +172,7 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
                 <span className="text-muted-foreground">W-L-T:</span>
                 <span className="font-medium ml-1">{team.record || "N/A"}</span>
               </div>
-              <div>
-                <span className="text-muted-foreground">OPR:</span>
-                <span className="font-medium ml-1">
-                  {team.team.data && (team.team.data as any).opr ? 
-                    (team.team.data as any).opr.toFixed(2) : "N/A"}
-                </span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">DPR:</span>
-                <span className="font-medium ml-1">
-                  {team.team.data && (team.team.data as any).dpr ? 
-                    (team.team.data as any).dpr.toFixed(2) : "N/A"}
-                </span>
-              </div>
             </div>
-          </div>
-          
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground mb-1">Awards at Current Event</h4>
-            <ul className="text-sm list-disc list-inside">
-              {(team.team.data && (team.team.data as any).awards && (team.team.data as any).awards.length > 0) ?
-                (team.team.data as any).awards.map((award: string, index: number) => (
-                  <li key={index}>{award}</li>
-                )) :
-                <li>No awards data available</li>
-              }
-            </ul>
           </div>
         </div>
         
