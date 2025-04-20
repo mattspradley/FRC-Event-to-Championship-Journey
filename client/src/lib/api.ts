@@ -90,7 +90,7 @@ export function getStatusColor(status: QualificationStatus): string {
 export function getStatusText(status: QualificationStatus, waitlistPosition?: number): string {
   switch (status) {
     case "qualified": return "Qualified";
-    case "waitlist": return `Waitlist ${waitlistPosition ? `#${waitlistPosition}` : ""}`;
+    case "waitlist": return "Waitlist";
     case "not-qualified": return "Not Qualified";
     case "unknown": return "Unknown";
   }
