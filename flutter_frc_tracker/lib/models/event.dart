@@ -1,27 +1,17 @@
-import 'package:json_annotation/json_annotation.dart';
+import 'package:intl/intl.dart';
 
-part 'event.g.dart';
-
-@JsonSerializable(explicitToJson: true)
 class Event {
   final String key;
   final String name;
-  @JsonKey(name: 'short_name')
   final String? shortName;
-  @JsonKey(name: 'event_type')
   final int eventType;
-  @JsonKey(name: 'event_type_string')
   final String? eventTypeString;
   final int year;
-  @JsonKey(name: 'start_date')
   final String? startDate;
-  @JsonKey(name: 'end_date')
   final String? endDate;
   final String? city;
-  @JsonKey(name: 'state_prov')
   final String? stateProv;
   final String? country;
-  final String? address;
 
   Event({
     required this.key,
@@ -35,58 +25,106 @@ class Event {
     this.city,
     this.stateProv,
     this.country,
-    this.address,
   });
 
-  factory Event.fromJson(Map<String, dynamic> json) => _$EventFromJson(json);
+  factory Event.fromJson(Map<String, dynamic> json) {
+    return Event(
+      key: json['key'],
+      name: json['name'],
+      shortName: json['short_name'],
+      eventType: json['event_type'],
+      eventTypeString: json['event_type_string'],
+      year: json['year'],
+      startDate: json['start_date'],
+      endDate: json['end_date'],
+      city: json['city'],
+      stateProv: json['state_prov'],
+      country: json['country'],
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$EventToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'key': key,
+      'name': name,
+      'short_name': shortName,
+      'event_type': eventType,
+      'event_type_string': eventTypeString,
+      'year': year,
+      'start_date': startDate,
+      'end_date': endDate,
+      'city': city,
+      'state_prov': stateProv,
+      'country': country,
+    };
+  }
 
-  // Format date range for display
+  // Gets a nicely formatted location string
+  String get formattedLocation {
+    final locations = [city, stateProv, country]
+        .where((part) => part != null && part.isNotEmpty)
+        .join(', ');
+    return locations.isEmpty ? 'No location data' : locations;
+  }
+
+  // Gets a nicely formatted date range
   String get formattedDateRange {
     if (startDate == null || endDate == null) {
-      return 'Dates TBA';
+      return 'Dates unknown';
     }
-    return '$startDate to $endDate';
+
+    final start = DateFormat('yyyy-MM-dd').parse(startDate!);
+    final end = DateFormat('yyyy-MM-dd').parse(endDate!);
+    final formatter = DateFormat('MMM d');
+    
+    // If the dates are in the same month
+    if (start.month == end.month && start.year == end.year) {
+      return '${formatter.format(start)} - ${DateFormat('d, y').format(end)}';
+    }
+    
+    // If the dates are in different months but the same year
+    if (start.year == end.year) {
+      return '${formatter.format(start)} - ${formatter.format(end)}, ${start.year}';
+    }
+    
+    // If the dates are in different years
+    return '${formatter.format(start)}, ${start.year} - ${formatter.format(end)}, ${end.year}';
   }
 
-  // Format location for display
-  String get formattedLocation {
-    final parts = [city, stateProv, country].where((part) => part != null && part.isNotEmpty).toList();
-    return parts.isEmpty ? 'Location TBA' : parts.join(', ');
-  }
-
-  // Check if the event is a championship
-  bool get isChampionship => eventType == 4;
-
-  // Check if the event is a division
-  bool get isDivision => eventType == 3;
-
-  // Check if the event is an official event
-  bool get isOfficial => eventType <= 5;
-
-  // Check if the event has already taken place
-  bool get hasEnded {
-    if (endDate == null) return false;
-    final now = DateTime.now();
-    final end = DateTime.parse(endDate!);
-    return end.isBefore(now);
-  }
-
-  // Check if the event is currently happening
+  // Determine if the event is ongoing
   bool get isOngoing {
     if (startDate == null || endDate == null) return false;
+    
     final now = DateTime.now();
-    final start = DateTime.parse(startDate!);
-    final end = DateTime.parse(endDate!);
-    return now.isAfter(start) && now.isBefore(end.add(const Duration(days: 1)));
+    final start = DateFormat('yyyy-MM-dd').parse(startDate!);
+    final end = DateFormat('yyyy-MM-dd').parse(endDate!);
+    
+    // Add a day to the end date to include the full day
+    final adjustedEnd = end.add(const Duration(days: 1));
+    
+    return now.isAfter(start) && now.isBefore(adjustedEnd);
   }
 
-  // Check if the event is in the future
+  // Determine if the event is in the future
   bool get isFuture {
     if (startDate == null) return false;
+    
     final now = DateTime.now();
-    final start = DateTime.parse(startDate!);
-    return start.isAfter(now);
+    final start = DateFormat('yyyy-MM-dd').parse(startDate!);
+    
+    return now.isBefore(start);
+  }
+
+  // Determine if the event has ended
+  bool get hasEnded {
+    if (endDate == null) return false;
+    
+    final now = DateTime.now();
+    final end = DateFormat('yyyy-MM-dd').parse(endDate!);
+    
+    // Add a day to the end date to include the full day
+    final adjustedEnd = end.add(const Duration(days: 1));
+    
+    return now.isAfter(adjustedEnd);
   }
 }

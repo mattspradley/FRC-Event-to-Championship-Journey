@@ -1,19 +1,11 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'team.g.dart';
-
-@JsonSerializable(explicitToJson: true)
 class Team {
   final String key;
-  @JsonKey(name: 'team_number')
   final int teamNumber;
   final String name;
   final String? nickname;
   final String? city;
-  @JsonKey(name: 'state_prov')
   final String? stateProv;
   final String? country;
-  @JsonKey(name: 'rookie_year')
   final int? rookieYear;
   final Map<String, dynamic>? data;
 
@@ -29,35 +21,56 @@ class Team {
     this.data,
   });
 
-  factory Team.fromJson(Map<String, dynamic> json) => _$TeamFromJson(json);
-
-  Map<String, dynamic> toJson() => _$TeamToJson(this);
-
-  // Get the team's display name (nickname if available, otherwise name)
-  String get displayName => nickname != null && nickname!.isNotEmpty ? nickname! : name;
-
-  // Format location for display
-  String get formattedLocation {
-    final parts = [city, stateProv, country].where((part) => part != null && part.isNotEmpty).toList();
-    return parts.isEmpty ? 'Location unavailable' : parts.join(', ');
+  factory Team.fromJson(Map<String, dynamic> json) {
+    return Team(
+      key: json['key'],
+      teamNumber: json['team_number'],
+      name: json['name'],
+      nickname: json['nickname'],
+      city: json['city'],
+      stateProv: json['state_prov'],
+      country: json['country'],
+      rookieYear: json['rookie_year'],
+      data: json['data'] != null ? Map<String, dynamic>.from(json['data']) : null,
+    );
   }
 
-  // Get years of experience
-  int get yearsOfExperience {
-    if (rookieYear == null) return 0;
-    return DateTime.now().year - rookieYear!;
+  Map<String, dynamic> toJson() {
+    return {
+      'key': key,
+      'team_number': teamNumber,
+      'name': name,
+      'nickname': nickname,
+      'city': city,
+      'state_prov': stateProv,
+      'country': country,
+      'rookie_year': rookieYear,
+      'data': data,
+    };
+  }
+
+  // Get a nicely formatted display name
+  String get displayName {
+    if (nickname != null && nickname!.isNotEmpty) {
+      return nickname!;
+    }
+    return name;
+  }
+
+  // Gets a nicely formatted location string
+  String get formattedLocation {
+    final locations = [city, stateProv, country]
+        .where((part) => part != null && part.isNotEmpty)
+        .join(', ');
+    return locations.isEmpty ? 'No location data' : locations;
   }
 }
 
-@JsonSerializable(explicitToJson: true)
 class ChampionshipAward {
   final String name;
-  @JsonKey(name: 'award_type')
   final int awardType;
-  @JsonKey(name: 'event_key')
   final String eventKey;
-  @JsonKey(name: 'recipient_list')
-  final List<AwardRecipient> recipientList;
+  final List<Map<String, String?>> recipientList;
   final int year;
 
   ChampionshipAward({
@@ -68,65 +81,69 @@ class ChampionshipAward {
     required this.year,
   });
 
-  factory ChampionshipAward.fromJson(Map<String, dynamic> json) => _$ChampionshipAwardFromJson(json);
+  factory ChampionshipAward.fromJson(Map<String, dynamic> json) {
+    List<Map<String, String?>> recipients = [];
+    if (json['recipient_list'] != null) {
+      recipients = (json['recipient_list'] as List)
+          .map((recipient) => {
+                'team_key': recipient['team_key'] as String?,
+                'awardee': recipient['awardee'] as String?,
+              })
+          .toList();
+    }
 
-  Map<String, dynamic> toJson() => _$ChampionshipAwardToJson(this);
+    return ChampionshipAward(
+      name: json['name'],
+      awardType: json['award_type'],
+      eventKey: json['event_key'],
+      recipientList: recipients,
+      year: json['year'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'award_type': awardType,
+      'event_key': eventKey,
+      'recipient_list': recipientList,
+      'year': year,
+    };
+  }
 }
 
-@JsonSerializable(explicitToJson: true)
-class AwardRecipient {
-  @JsonKey(name: 'team_key')
-  final String? teamKey;
-  final String? awardee;
-
-  AwardRecipient({
-    this.teamKey,
-    this.awardee,
-  });
-
-  factory AwardRecipient.fromJson(Map<String, dynamic> json) => _$AwardRecipientFromJson(json);
-
-  Map<String, dynamic> toJson() => _$AwardRecipientToJson(this);
+enum QualificationStatus {
+  qualified,
+  waitlist,
+  notQualified,
+  unknown,
 }
 
-@JsonSerializable(explicitToJson: true)
 class TeamWithStatus {
   final Team team;
-  @JsonKey(name: 'isQualified')
   final bool isQualified;
-  @JsonKey(name: 'waitlistPosition')
   final int? waitlistPosition;
-  @JsonKey(name: 'championshipLocation')
   final String? championshipLocation;
-  @JsonKey(name: 'division')
   final String? division;
-  @JsonKey(name: 'divisionEventKey')
   final String? divisionEventKey;
-  @JsonKey(name: 'championshipEventKey')
   final String? championshipEventKey;
-  @JsonKey(name: 'championshipRank')
   final int? championshipRank;
-  @JsonKey(name: 'championshipRecord')
   final String? championshipRecord;
-  @JsonKey(name: 'championshipAwards')
   final List<ChampionshipAward>? championshipAwards;
-  @JsonKey(name: 'divisionTotalTeams')
   final int? divisionTotalTeams;
-  @JsonKey(name: 'finalEventKey')
+  
+  // Final championship event data
   final String? finalEventKey;
-  @JsonKey(name: 'finalRank')
   final String? finalRank;
-  @JsonKey(name: 'finalRecord')
   final String? finalRecord;
-  @JsonKey(name: 'rank')
+  
+  // Current event data
   final int? rank;
-  @JsonKey(name: 'record')
   final String? record;
-  @JsonKey(name: 'totalTeams')
   final int? totalTeams;
-  @JsonKey(name: 'overall_status_str')
+  
+  // Status messages (HTML content)
   final String? overallStatusStr;
-  @JsonKey(name: 'alliance_status_str')
   final String? allianceStatusStr;
 
   TeamWithStatus({
@@ -151,11 +168,66 @@ class TeamWithStatus {
     this.allianceStatusStr,
   });
 
-  factory TeamWithStatus.fromJson(Map<String, dynamic> json) => _$TeamWithStatusFromJson(json);
+  factory TeamWithStatus.fromJson(Map<String, dynamic> json) {
+    // Parse team data
+    final team = Team.fromJson(json['team']);
+    
+    // Parse championship awards if available
+    List<ChampionshipAward>? championshipAwards;
+    if (json['championship_awards'] != null) {
+      championshipAwards = (json['championship_awards'] as List)
+          .map((award) => ChampionshipAward.fromJson(award))
+          .toList();
+    }
 
-  Map<String, dynamic> toJson() => _$TeamWithStatusToJson(this);
+    return TeamWithStatus(
+      team: team,
+      isQualified: json['is_qualified'] ?? false,
+      waitlistPosition: json['waitlist_position'],
+      championshipLocation: json['championship_location'],
+      division: json['division'],
+      divisionEventKey: json['division_event_key'],
+      championshipEventKey: json['championship_event_key'],
+      championshipRank: json['championship_rank'],
+      championshipRecord: json['championship_record'],
+      championshipAwards: championshipAwards,
+      divisionTotalTeams: json['division_total_teams'],
+      finalEventKey: json['final_event_key'],
+      finalRank: json['final_rank'],
+      finalRecord: json['final_record'],
+      rank: json['rank'],
+      record: json['record'],
+      totalTeams: json['total_teams'],
+      overallStatusStr: json['overall_status_str'],
+      allianceStatusStr: json['alliance_status_str'],
+    );
+  }
 
-  // Get team's qualification status
+  Map<String, dynamic> toJson() {
+    return {
+      'team': team.toJson(),
+      'is_qualified': isQualified,
+      'waitlist_position': waitlistPosition,
+      'championship_location': championshipLocation,
+      'division': division,
+      'division_event_key': divisionEventKey,
+      'championship_event_key': championshipEventKey,
+      'championship_rank': championshipRank,
+      'championship_record': championshipRecord,
+      'championship_awards': championshipAwards?.map((award) => award.toJson()).toList(),
+      'division_total_teams': divisionTotalTeams,
+      'final_event_key': finalEventKey,
+      'final_rank': finalRank,
+      'final_record': finalRecord,
+      'rank': rank,
+      'record': record,
+      'total_teams': totalTeams,
+      'overall_status_str': overallStatusStr,
+      'alliance_status_str': allianceStatusStr,
+    };
+  }
+
+  // Get the qualification status of the team
   QualificationStatus getQualificationStatus() {
     if (isQualified) {
       return QualificationStatus.qualified;
@@ -169,22 +241,16 @@ class TeamWithStatus {
   // Get status text for display
   String getStatusText() {
     final status = getQualificationStatus();
+    
     switch (status) {
       case QualificationStatus.qualified:
         return 'Qualified';
       case QualificationStatus.waitlist:
-        return waitlistPosition != null ? 'Waitlist #$waitlistPosition' : 'Waitlist';
+        return waitlistPosition != null ? 'Waitlist #${waitlistPosition}' : 'Waitlist';
       case QualificationStatus.notQualified:
         return 'Not Qualified';
       case QualificationStatus.unknown:
         return 'Unknown';
     }
   }
-}
-
-enum QualificationStatus {
-  qualified,
-  waitlist,
-  notQualified,
-  unknown,
 }
