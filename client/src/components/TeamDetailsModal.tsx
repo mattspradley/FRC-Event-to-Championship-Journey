@@ -98,23 +98,24 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
                           {team.championshipRecord || "Not Yet Available"}
                         </span>
                       </div>
-                      {team.overall_status_str && (
-                        <div className="col-span-2">
-                          <span className="text-green-800">Overall Status:</span>
-                          <span className="font-medium ml-1 text-green-900">
-                            {team.overall_status_str}
-                          </span>
-                        </div>
-                      )}
+                      <div className="col-span-2">
+                        <span className="text-green-800">Overall Status:</span>
+                        <span 
+                          className="font-medium ml-1 text-green-900"
+                          dangerouslySetInnerHTML={{
+                            __html: team.overall_status_str || "Not available"
+                          }}
+                        />
+                      </div>
                     </div>
                   </>
                 )}
                 
-                {/* Show finals information if available */}
-                {team.finalEventKey && (
-                  <>
-                    <h5 className="text-sm font-medium text-green-800 mb-2 mt-3">Championship Finals Performance</h5>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
+                {/* Show finals information */}
+                <h5 className="text-sm font-medium text-green-800 mb-2 mt-3">Championship Finals Performance</h5>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {team.finalEventKey && (
+                    <>
                       <div>
                         <span className="text-green-800">Finals Status:</span>
                         <span className="font-medium ml-1 text-green-900">
@@ -135,17 +136,18 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
                           {team.finalEventKey}
                         </span>
                       </div>
-                      {team.alliance_status_str && (
-                        <div className="col-span-2">
-                          <span className="text-green-800">Alliance Status:</span>
-                          <span className="font-medium ml-1 text-green-900">
-                            {team.alliance_status_str}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
+                    </>
+                  )}
+                  <div className="col-span-2">
+                    <span className="text-green-800">Alliance Status:</span>
+                    <span 
+                      className="font-medium ml-1 text-green-900"
+                      dangerouslySetInnerHTML={{
+                        __html: team.alliance_status_str || "Not yet available"
+                      }}
+                    />
+                  </div>
+                </div>
                 
                 {/* Show championship awards if available */}
                 {team.championshipAwards && team.championshipAwards.length > 0 && (
