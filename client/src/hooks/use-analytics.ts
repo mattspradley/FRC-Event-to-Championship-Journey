@@ -1,5 +1,6 @@
 /**
  * Custom hook for Google Analytics tracking
+ * Google Analytics script is loaded in index.html with measurement ID G-TLKVNR6KVB
  */
 
 // Declare gtag function for TypeScript
@@ -8,19 +9,16 @@ interface Window {
   dataLayer?: any[];
 }
 
-// Get analytics ID from environment
-const getAnalyticsId = () => {
-  return import.meta.env.GOOGLE_ANALYTICS_ID as string || '';
-};
+// Analytics ID is hardcoded in index.html
+const ANALYTICS_ID = 'G-TLKVNR6KVB';
 
 // Track a page view
 export const trackPageView = (path: string) => {
   try {
     const gtag = (window as any).gtag;
-    const gaId = getAnalyticsId();
     
-    if (gtag && gaId) {
-      gtag('config', gaId, {
+    if (gtag) {
+      gtag('config', ANALYTICS_ID, {
         page_path: path,
       });
       console.log('Page view tracked:', path);
@@ -40,7 +38,7 @@ export const trackEvent = (
   try {
     const gtag = (window as any).gtag;
     
-    if (gtag && getAnalyticsId()) {
+    if (gtag) {
       gtag('event', action, {
         event_category: category,
         event_label: label,
