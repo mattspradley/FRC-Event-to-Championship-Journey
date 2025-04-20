@@ -30,7 +30,7 @@ const getFormattedDate = (): string => {
 // Define version object with static values that will be replaced during build
 export const VERSION: VersionResponse = {
   // Application version using semantic versioning (major.minor.patch) - updated by deploy script
-  appVersion: '1.0.01,
+  appVersion: '1.0.2',
   
   // Build number - updated by deploy script
   buildNumber: '20250420.2',
