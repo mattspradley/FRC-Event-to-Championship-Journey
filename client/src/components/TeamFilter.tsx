@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { trackEvent } from "@/hooks/use-analytics";
 
 interface TeamFilterProps {
   onStatusFilterChange: (value: string) => void;
@@ -22,6 +23,24 @@ const TeamFilter: React.FC<TeamFilterProps> = ({
   sortBy,
   searchQuery,
 }) => {
+  // Define wrapped handlers for tracking
+  const handleStatusFilterChange = (value: string) => {
+    trackEvent('Filtering', 'filter_by_status', value);
+    onStatusFilterChange(value);
+  };
+  
+  const handleSortChange = (value: string) => {
+    trackEvent('Filtering', 'sort_teams', value);
+    onSortChange(value);
+  };
+  
+  const handleSearchChange = (value: string) => {
+    // Only track search when user has entered at least 3 characters
+    if (value.length >= 3) {
+      trackEvent('Filtering', 'search_teams', value);
+    }
+    onSearchChange(value);
+  };
   return (
     <Card className="mb-6">
       <CardContent className="pt-6">
@@ -32,7 +51,7 @@ const TeamFilter: React.FC<TeamFilterProps> = ({
             </Label>
             <Select
               value={statusFilter}
-              onValueChange={onStatusFilterChange}
+              onValueChange={handleStatusFilterChange}
             >
               <SelectTrigger id="status-filter" className="w-[180px]">
                 <SelectValue placeholder="All Statuses" />
@@ -53,7 +72,7 @@ const TeamFilter: React.FC<TeamFilterProps> = ({
             </Label>
             <Select
               value={sortBy}
-              onValueChange={onSortChange}
+              onValueChange={handleSortChange}
             >
               <SelectTrigger id="sort-by" className="w-[180px]">
                 <SelectValue placeholder="Team Number" />
@@ -75,7 +94,7 @@ const TeamFilter: React.FC<TeamFilterProps> = ({
                 id="search-teams"
                 placeholder="Search..."
                 value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-8 w-full md:w-64"
               />
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />

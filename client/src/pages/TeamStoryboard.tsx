@@ -21,6 +21,7 @@ import { toast } from "@/hooks/use-toast";
 import { Calendar, ChevronRight, Medal, Award, Flag, Trophy, ArrowRight, Star, TrendingUp } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
+import { trackEvent } from "@/hooks/use-analytics";
 
 interface Achievement {
   event: {
