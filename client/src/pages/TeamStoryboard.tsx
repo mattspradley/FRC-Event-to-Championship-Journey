@@ -414,24 +414,6 @@ const TeamStoryboard: React.FC = () => {
                                       Record: {achievement.performance.record}
                                     </Badge>
                                   </div>
-                                  
-                                  {/* Percentile visualization */}
-                                  <div className="mt-2">
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs text-muted-foreground">Performance Percentile</span>
-                                      <span className="text-xs font-medium">
-                                        {Math.round((1 - (achievement.performance.rank / achievement.performance.totalTeams)) * 100)}%
-                                      </span>
-                                    </div>
-                                    <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                                      <div 
-                                        className={`h-full ${getPercentileColor(achievement.performance.rank, achievement.performance.totalTeams)}`}
-                                        style={{ 
-                                          width: `${Math.round((1 - (achievement.performance.rank / achievement.performance.totalTeams)) * 100)}%` 
-                                        }}
-                                      />
-                                    </div>
-                                  </div>
                                 </div>
                               )}
                               
