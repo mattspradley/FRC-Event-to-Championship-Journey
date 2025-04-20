@@ -12,8 +12,8 @@ interface Window {
 export const trackPageView = (path: string) => {
   try {
     const gtag = (window as any).gtag;
-    if (gtag) {
-      gtag('config', import.meta.env.VITE_GOOGLE_ANALYTICS_ID, {
+    if (gtag && import.meta.env.GOOGLE_ANALYTICS_ID) {
+      gtag('config', import.meta.env.GOOGLE_ANALYTICS_ID, {
         page_path: path,
       });
     }
@@ -31,7 +31,7 @@ export const trackEvent = (
 ) => {
   try {
     const gtag = (window as any).gtag;
-    if (gtag) {
+    if (gtag && import.meta.env.GOOGLE_ANALYTICS_ID) {
       gtag('event', action, {
         event_category: category,
         event_label: label,
