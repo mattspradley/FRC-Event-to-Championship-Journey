@@ -315,9 +315,16 @@ const TeamStoryboard: React.FC = () => {
                           <CardHeader className="pb-2">
                             <div className="flex justify-between items-start mb-1">
                               <CardTitle>{achievement.event.name}</CardTitle>
-                              <Badge variant="outline" className={getEventTypeColor(achievement.event.eventType)}>
-                                {getEventTypeName(achievement.event.eventType)}
-                              </Badge>
+                              <div className="flex flex-col gap-2 items-end">
+                                <Badge variant="outline" className={getEventTypeColor(achievement.event.eventType)}>
+                                  {getEventTypeName(achievement.event.eventType)}
+                                </Badge>
+                                {achievement.awards && achievement.awards.length > 0 && achievement.awards.some(a => a.name.toLowerCase().includes('winner')) && (
+                                  <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 shadow-sm">
+                                    <Trophy className="h-3 w-3 mr-1" /> Winner
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                             <CardDescription>
                               <div className="flex items-center gap-2">
@@ -397,14 +404,7 @@ const TeamStoryboard: React.FC = () => {
                           </CardFooter>
                         </Card>
                         
-                        {/* Key milestone indicators */}
-                        {achievement.awards && achievement.awards.length > 0 && achievement.awards.some(a => a.name.toLowerCase().includes('winner')) && (
-                          <div className="absolute -right-4 top-16">
-                            <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 shadow-sm">
-                              <Trophy className="h-3 w-3 mr-1" /> Winner
-                            </Badge>
-                          </div>
-                        )}
+                        {/* Connection shown below instead of a badge outside the card */}
                         
                         {/* Show connection to next event */}
                         {index < teamData.achievements.length - 1 && (
