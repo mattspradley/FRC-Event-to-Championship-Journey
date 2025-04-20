@@ -2,18 +2,25 @@
  * Custom hook for Google Analytics tracking
  */
 
-// Define the gtag function type
+// Declare gtag function for TypeScript
 interface Window {
-  gtag?: (command: string, action: string, params?: any) => void;
+  gtag?: (...args: any[]) => void;
   dataLayer?: any[];
 }
+
+// Get analytics ID from environment
+const getAnalyticsId = () => {
+  return import.meta.env.GOOGLE_ANALYTICS_ID as string || '';
+};
 
 // Track a page view
 export const trackPageView = (path: string) => {
   try {
     const gtag = (window as any).gtag;
-    if (gtag && import.meta.env.VITE_GOOGLE_ANALYTICS_ID) {
-      gtag('config', import.meta.env.VITE_GOOGLE_ANALYTICS_ID, {
+    const gaId = getAnalyticsId();
+    
+    if (gtag && gaId) {
+      gtag('config', gaId, {
         page_path: path,
       });
       console.log('Page view tracked:', path);
@@ -32,7 +39,8 @@ export const trackEvent = (
 ) => {
   try {
     const gtag = (window as any).gtag;
-    if (gtag && import.meta.env.VITE_GOOGLE_ANALYTICS_ID) {
+    
+    if (gtag && getAnalyticsId()) {
       gtag('event', action, {
         event_category: category,
         event_label: label,
