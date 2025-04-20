@@ -101,6 +101,9 @@ const TeamStoryboard: React.FC = () => {
       const data: TeamData = await apiRequest(`/api/team/${teamNum}/achievements/${yearStr}`);
       setTeamData(data);
       
+      // Track successful team data load
+      trackEvent('Team_Storyboard', 'load_team_data', `Team ${teamNum} - ${yearStr}`);
+      
       // Only update URL if requested (for form submissions, not for URL-triggered loads)
       if (updateURL) {
         setLocation(`/team/${teamNum}/${yearStr}`, { replace: true });
@@ -109,6 +112,10 @@ const TeamStoryboard: React.FC = () => {
       console.error("Error loading team data:", err);
       setError("Failed to load team data. Please check the team number and try again.");
       setTeamData(null);
+      
+      // Track error in loading team data
+      trackEvent('Team_Storyboard', 'load_team_error', `Team ${teamNum} - ${yearStr}`);
+      
       toast({
         title: "Error",
         description: "Failed to load team data. Please check the team number and try again.",
@@ -122,6 +129,8 @@ const TeamStoryboard: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (teamNumber.trim() && year) {
+      // Track search form submission
+      trackEvent('Team_Storyboard', 'search_submit', `Team ${teamNumber.trim()} - ${year}`);
       loadTeamData(teamNumber.trim(), year);
     }
   };
@@ -313,7 +322,15 @@ const TeamStoryboard: React.FC = () => {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => window.open(`https://www.thebluealliance.com/team/${teamData.teamNumber}/${teamData.year}`, '_blank')}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full" 
+                    onClick={() => {
+                      trackEvent('Team_Storyboard', 'view_tba', `Team ${teamData.teamNumber} - ${teamData.year}`);
+                      window.open(`https://www.thebluealliance.com/team/${teamData.teamNumber}/${teamData.year}`, '_blank');
+                    }}
+                  >
                     View on The Blue Alliance
                   </Button>
                 </CardFooter>
@@ -461,7 +478,10 @@ const TeamStoryboard: React.FC = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => window.open(`https://www.thebluealliance.com/event/${achievement.event.key}`, '_blank')}
+                              onClick={() => {
+                                trackEvent('Team_Storyboard', 'view_event', `${achievement.event.name} (${achievement.event.key})`);
+                                window.open(`https://www.thebluealliance.com/event/${achievement.event.key}`, '_blank');
+                              }}
                             >
                               View Event
                             </Button>
