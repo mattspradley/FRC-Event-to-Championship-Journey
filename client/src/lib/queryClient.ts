@@ -7,20 +7,48 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
+export async function apiRequest<T = any>(
+  urlOrPathOrMethod: string,
+  urlOrPathOrData?: string | unknown,
+  data?: unknown
+): Promise<T> {
+  let method = "GET";
+  let url = "";
+  let payload: unknown | undefined = undefined;
+  
+  // Handle the various parameter combinations
+  if (arguments.length === 1) {
+    // Single parameter: GET request to the provided URL
+    url = urlOrPathOrMethod;
+  } else if (arguments.length === 2) {
+    if (typeof urlOrPathOrData === "string") {
+      // Two string parameters: First is method, second is URL
+      method = urlOrPathOrMethod;
+      url = urlOrPathOrData as string;
+    } else {
+      // String + data: GET request to URL with data
+      url = urlOrPathOrMethod;
+      payload = urlOrPathOrData;
+    }
+  } else if (arguments.length === 3) {
+    // Three parameters: method, URL, and data
+    method = urlOrPathOrMethod;
+    url = urlOrPathOrData as string;
+    payload = data;
+  }
+
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
+    headers: payload ? { "Content-Type": "application/json" } : {},
+    body: payload ? JSON.stringify(payload) : undefined,
     credentials: "include",
   });
 
   await throwIfResNotOk(res);
-  return res;
+  
+  // Convert the response to JSON with the specified type
+  const jsonData: T = await res.json();
+  return jsonData;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

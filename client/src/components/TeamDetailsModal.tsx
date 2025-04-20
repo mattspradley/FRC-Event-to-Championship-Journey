@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TeamWithStatus, getQualificationStatus, getStatusColor, getStatusText } from "@/lib/api";
+import { Award, ExternalLink } from "lucide-react";
 
 interface TeamDetailsModalProps {
   team: TeamWithStatus;
@@ -29,6 +31,7 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
   const status = getQualificationStatus(team);
   const statusColor = getStatusColor(status);
   const statusText = getStatusText(status, team.waitlistPosition);
+  const [, setLocation] = useLocation();
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -173,13 +176,27 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
           </div>
         </div>
         
-        <DialogFooter className="mt-4">
+        <DialogFooter className="mt-4 flex flex-wrap gap-2">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
           <Button 
+            variant="secondary"
+            className="flex items-center gap-1"
+            onClick={() => {
+              onClose();
+              const year = eventYear || new Date().getFullYear();
+              setLocation(`/team/${team.team.team_number}/${year}`);
+            }}
+          >
+            <Award className="h-4 w-4" />
+            View Team Storyboard
+          </Button>
+          <Button 
+            className="flex items-center gap-1"
             onClick={() => window.open(`https://www.thebluealliance.com/team/${team.team.team_number}/${eventYear || new Date().getFullYear()}`, '_blank')}
           >
+            <ExternalLink className="h-4 w-4" />
             View on The Blue Alliance
           </Button>
         </DialogFooter>
