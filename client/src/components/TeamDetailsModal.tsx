@@ -16,6 +16,7 @@ interface TeamDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   eventYear?: number; // Optional event year for the team page link
+  selectedEventName?: string | null; // The name of the currently selected event
 }
 
 const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
@@ -23,6 +24,7 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
   isOpen,
   onClose,
   eventYear,
+  selectedEventName,
 }) => {
   const status = getQualificationStatus(team);
   const statusColor = getStatusColor(status);
@@ -80,12 +82,7 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
                           {team.division || "Not Yet Assigned"}
                         </span>
                       </div>
-                      <div>
-                        <span className="text-green-800">Event Key:</span>
-                        <span className="font-medium ml-1 text-green-900">
-                          {team.divisionEventKey || "N/A"}
-                        </span>
-                      </div>
+
                       <div>
                         <span className="text-green-800">Division Rank:</span>
                         <span className="font-medium ml-1 text-green-900">
@@ -160,7 +157,7 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
           </div>
           
           <div className="mb-4">
-            <h4 className="text-sm font-medium text-muted-foreground mb-1">Performance at Current Event</h4>
+            <h4 className="text-sm font-medium text-muted-foreground mb-1">Performance at {selectedEventName || "Current Event"}</h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <span className="text-muted-foreground">Ranking:</span>
