@@ -76,13 +76,11 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails, eventYear }) =
               <>
                 <div>
                   <span className="text-muted-foreground">Championship:</span>
-                  <span className="font-medium ml-1">
-                    {status === "waitlist" ? "Pending" : "N/A"}
-                  </span>
+                  <span className="font-medium ml-1">N/A</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Division:</span>
-                  <span className="font-medium ml-1">{status === "waitlist" ? "TBD" : "N/A"}</span>
+                  <span className="font-medium ml-1">N/A</span>
                 </div>
               </>
             )}

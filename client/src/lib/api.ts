@@ -67,7 +67,7 @@ export interface TeamWithStatus {
   alliance_status_str?: string;
 }
 
-export type QualificationStatus = "qualified" | "waitlist" | "not-qualified" | "unknown";
+export type QualificationStatus = "qualified" | "not-qualified" | "unknown";
 
 export function getQualificationStatus(teamStatus: TeamWithStatus): QualificationStatus {
   if (teamStatus.isQualified) {
@@ -83,7 +83,6 @@ export function getQualificationStatus(teamStatus: TeamWithStatus): Qualificatio
 export function getStatusColor(status: QualificationStatus): string {
   switch (status) {
     case "qualified": return "success";
-    case "waitlist": return "warning";
     case "not-qualified": return "destructive";
     case "unknown": return "muted";
   }
