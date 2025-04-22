@@ -64,9 +64,8 @@ const TeamsList: React.FC<TeamsListProps> = ({
         filtered.sort((a, b) => {
           const statusOrder = {
             qualified: 0,
-            waitlist: 1,
-            "not-qualified": 2,
-            unknown: 3,
+            "not-qualified": 1,
+            unknown: 2,
           };
           const statusA = getQualificationStatus(a);
           const statusB = getQualificationStatus(b);

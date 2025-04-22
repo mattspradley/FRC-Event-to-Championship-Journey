@@ -11,7 +11,7 @@ interface StatusDashboardProps {
 const StatusDashboard: React.FC<StatusDashboardProps> = ({ teams, isLoading }) => {
   const stats = useMemo(() => {
     const qualified = teams.filter(team => getQualificationStatus(team) === "qualified").length;
-    const waitlist = teams.filter(team => getQualificationStatus(team) === "waitlist").length;
+    const notQualified = teams.filter(team => getQualificationStatus(team) === "not-qualified").length;
     
     // Find championship date from the first qualified team
     const qualifiedTeam = teams.find(team => 
@@ -26,7 +26,7 @@ const StatusDashboard: React.FC<StatusDashboardProps> = ({ teams, isLoading }) =
     
     return {
       qualified,
-      waitlist,
+      notQualified,
       total: teams.length,
       championshipDate
     };
@@ -73,9 +73,9 @@ const StatusDashboard: React.FC<StatusDashboardProps> = ({ teams, isLoading }) =
             <h3 className="text-sm text-muted-foreground">Qualified Teams</h3>
             <p className="text-2xl font-medium">{stats.qualified}</p>
           </div>
-          <div className="bg-yellow-100 rounded-lg p-3 border-l-4 border-yellow-500">
-            <h3 className="text-sm text-muted-foreground">Waiting List</h3>
-            <p className="text-2xl font-medium">{stats.waitlist}</p>
+          <div className="bg-red-100 rounded-lg p-3 border-l-4 border-red-600">
+            <h3 className="text-sm text-muted-foreground">Not Qualified</h3>
+            <p className="text-2xl font-medium">{stats.notQualified}</p>
           </div>
           <div className="bg-blue-100 rounded-lg p-3 border-l-4 border-blue-600">
             <h3 className="text-sm text-muted-foreground">Championship Date</h3>
@@ -87,10 +87,6 @@ const StatusDashboard: React.FC<StatusDashboardProps> = ({ teams, isLoading }) =
           <div className="flex items-center text-sm">
             <span className="w-3 h-3 rounded-full bg-green-500 mr-1"></span>
             <span>Qualified</span>
-          </div>
-          <div className="flex items-center text-sm">
-            <span className="w-3 h-3 rounded-full bg-amber-500 mr-1"></span>
-            <span>Waitlist</span>
           </div>
           <div className="flex items-center text-sm">
             <span className="w-3 h-3 rounded-full bg-red-500 mr-1"></span>

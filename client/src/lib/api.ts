@@ -72,9 +72,8 @@ export type QualificationStatus = "qualified" | "waitlist" | "not-qualified" | "
 export function getQualificationStatus(teamStatus: TeamWithStatus): QualificationStatus {
   if (teamStatus.isQualified) {
     return "qualified";
-  } else if (teamStatus.waitlistPosition && teamStatus.waitlistPosition > 0) {
-    return "waitlist";
-  } else if (teamStatus.waitlistPosition === 0) {
+  } else if (teamStatus.waitlistPosition === 0 || teamStatus.waitlistPosition) {
+    // Both waitlisted teams and explicitly not-qualified teams are treated as not-qualified
     return "not-qualified";
   } else {
     return "unknown";

@@ -59,7 +59,6 @@ const TeamFilter: React.FC<TeamFilterProps> = ({
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="qualified">Qualified</SelectItem>
-                <SelectItem value="waitlist">Waitlist</SelectItem>
                 <SelectItem value="not-qualified">Not Qualified</SelectItem>
                 <SelectItem value="unknown">Unknown</SelectItem>
               </SelectContent>
