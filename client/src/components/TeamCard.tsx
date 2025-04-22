@@ -18,14 +18,12 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails, eventYear }) =
   // Define better colors based on status - only affect the border, not the background
   const statusColorClasses: Record<string, string> = {
     success: "border-green-500",
-    warning: "border-yellow-500",
     destructive: "border-red-500",
     muted: "border-gray-300"
   };
   
   const badgeClasses: Record<string, string> = {
     success: "bg-green-100 text-green-800 hover:bg-green-200",
-    warning: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
     destructive: "bg-red-100 text-red-800 hover:bg-red-200",
     muted: ""
   };
@@ -33,7 +31,6 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails, eventYear }) =
   return (
     <div className={`bg-white rounded-lg shadow-md overflow-hidden border-t-4 flex flex-col h-full ${
         statusColor === "success" ? statusColorClasses.success :
-        statusColor === "warning" ? statusColorClasses.warning :
         statusColor === "destructive" ? statusColorClasses.destructive :
         statusColorClasses.muted
       }`}>
@@ -44,7 +41,6 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onShowDetails, eventYear }) =
             variant={statusColor === "muted" ? "secondary" : statusColor as any}
             className={
               statusColor === "success" ? badgeClasses.success :
-              statusColor === "warning" ? badgeClasses.warning :
               statusColor === "destructive" ? badgeClasses.destructive :
               badgeClasses.muted
             }
